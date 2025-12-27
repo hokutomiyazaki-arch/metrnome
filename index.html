@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -29,6 +29,8 @@
             height: 100%;
             overflow: hidden;
             position: fixed;
+            top: 0;
+            left: 0;
             touch-action: manipulation;
         }
 
@@ -36,8 +38,6 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             color: #ffffff;
-            min-height: 100vh;
-            min-height: -webkit-fill-available;
             display: flex;
             flex-direction: column;
             padding-top: env(safe-area-inset-top);
@@ -104,10 +104,12 @@
             display: flex;
             flex-direction: column;
             width: 100%;
-            max-width: 500px;
+            max-width: 600px;
             margin: 0 auto;
             padding: 15px;
-            overflow: hidden;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
         }
 
         /* ヘッダー */
@@ -116,6 +118,7 @@
             align-items: center;
             justify-content: space-between;
             margin-bottom: 10px;
+            flex-shrink: 0;
         }
 
         .logo-title {
@@ -185,7 +188,6 @@
             padding-top: calc(20px + env(safe-area-inset-top));
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
-            touch-action: pan-y !important;
         }
 
         .side-menu.show {
@@ -249,8 +251,8 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            min-height: 0;
+            justify-content: flex-start;
+            padding-top: 10px;
         }
 
         .bpm-display {
@@ -258,8 +260,9 @@
             font-weight: bold;
             color: #fff;
             text-shadow: 0 0 30px rgba(233, 69, 96, 0.5);
-            margin-bottom: 5px;
+            margin-bottom: 0;
             transition: transform 0.08s, color 0.08s;
+            line-height: 1;
         }
 
         .bpm-display.beat {
@@ -277,10 +280,11 @@
         .beat-indicators {
             display: flex;
             gap: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             flex-wrap: wrap;
             justify-content: center;
-            max-width: 300px;
+            max-width: 280px;
+            min-height: 24px;
         }
 
         .beat-dot {
@@ -289,6 +293,7 @@
             border-radius: 50%;
             background: rgba(255,255,255,0.2);
             transition: all 0.08s;
+            flex-shrink: 0;
         }
 
         .beat-dot.active {
@@ -304,10 +309,11 @@
 
         /* ペンデュラム */
         .pendulum-container {
-            width: 180px;
-            height: 120px;
+            width: 160px;
+            height: 100px;
             position: relative;
             margin-bottom: 15px;
+            flex-shrink: 0;
         }
 
         .pendulum {
@@ -315,7 +321,7 @@
             bottom: 0;
             left: 50%;
             width: 4px;
-            height: 100px;
+            height: 85px;
             background: linear-gradient(to bottom, #e94560, #ff6b6b);
             transform-origin: bottom center;
             transform: translateX(-50%) rotate(0deg);
@@ -328,8 +334,8 @@
             top: 0;
             left: 50%;
             transform: translateX(-50%);
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             background: radial-gradient(circle, #ff6b6b, #e94560);
             border-radius: 50%;
             box-shadow: 0 0 15px rgba(233, 69, 96, 0.6);
@@ -340,8 +346,8 @@
             bottom: 0;
             left: 50%;
             transform: translateX(-50%);
-            width: 14px;
-            height: 14px;
+            width: 12px;
+            height: 12px;
             background: #fff;
             border-radius: 50%;
             z-index: 1;
@@ -350,14 +356,16 @@
         /* BPMスライダー */
         .bpm-slider-container {
             width: 100%;
-            max-width: 320px;
-            margin-bottom: 15px;
+            max-width: 300px;
+            margin-bottom: 12px;
+            padding: 0 10px;
         }
 
         .bpm-slider {
             width: 100%;
             height: 8px;
             -webkit-appearance: none;
+            appearance: none;
             background: rgba(255,255,255,0.1);
             border-radius: 4px;
             outline: none;
@@ -365,6 +373,7 @@
 
         .bpm-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
+            appearance: none;
             width: 28px;
             height: 28px;
             background: linear-gradient(135deg, #e94560, #ff6b6b);
@@ -382,23 +391,27 @@
             border: none;
         }
 
+        /* BPMプリセット */
         .bpm-presets {
             display: flex;
             gap: 8px;
             flex-wrap: wrap;
             justify-content: center;
-            margin-bottom: 12px;
+            margin-bottom: 15px;
+            width: 100%;
+            max-width: 320px;
         }
 
         .preset-btn {
-            padding: 8px 14px;
+            padding: 10px 16px;
             background: rgba(255,255,255,0.1);
             border: none;
             border-radius: 20px;
             color: #ccc;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             cursor: pointer;
             transition: all 0.2s;
+            min-width: 50px;
         }
 
         .preset-btn:active,
@@ -407,42 +420,66 @@
             color: #fff;
         }
 
-        /* 設定行 */
+        /* 設定セクション */
+        .settings-section {
+            width: 100%;
+            max-width: 350px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
         .setting-row {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 12px;
-            margin-bottom: 12px;
-            flex-wrap: wrap;
+            gap: 15px;
+            width: 100%;
+            background: rgba(255,255,255,0.05);
+            padding: 12px 15px;
+            border-radius: 12px;
         }
 
         .setting-label {
-            color: #888;
-            font-size: 0.9rem;
-            min-width: 50px;
+            color: #aaa;
+            font-size: 0.95rem;
+            min-width: 45px;
+            text-align: right;
+        }
+
+        .setting-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
         .setting-btn {
-            width: 36px;
-            height: 36px;
-            background: rgba(255,255,255,0.1);
+            width: 44px;
+            height: 44px;
+            background: rgba(255,255,255,0.15);
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             color: white;
-            font-size: 1.1rem;
+            font-size: 1.4rem;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-user-select: none;
+            user-select: none;
         }
 
         .setting-btn:active {
-            background: rgba(233, 69, 96, 0.3);
+            background: rgba(233, 69, 96, 0.4);
         }
 
         .setting-value {
-            font-size: 1.1rem;
+            font-size: 1.4rem;
             font-weight: bold;
-            min-width: 40px;
+            min-width: 50px;
             text-align: center;
+            color: #fff;
         }
 
         /* 音色選択 */
@@ -454,12 +491,12 @@
         }
 
         .sound-btn {
-            padding: 6px 12px;
+            padding: 8px 14px;
             background: rgba(255,255,255,0.1);
             border: none;
-            border-radius: 16px;
+            border-radius: 18px;
             color: #aaa;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             cursor: pointer;
             transition: all 0.2s;
         }
@@ -472,7 +509,7 @@
         /* コントロールボタン */
         .controls {
             display: flex;
-            gap: 20px;
+            gap: 25px;
             justify-content: center;
             align-items: center;
             margin-bottom: 10px;
@@ -504,14 +541,17 @@
         }
 
         .control-btn {
-            width: 44px;
-            height: 44px;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
             background: rgba(255,255,255,0.1);
             border: none;
             color: white;
-            font-size: 1.1rem;
+            font-size: 1.3rem;
             cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .control-btn.active {
@@ -525,19 +565,32 @@
             padding: 8px;
             color: #666;
             font-size: 0.75rem;
+            flex-shrink: 0;
         }
 
-        /* レスポンシブ */
-        @media (max-height: 650px) {
-            .bpm-display { font-size: 3.5rem; }
+        /* レスポンシブ - 小さい画面 */
+        @media (max-height: 700px) {
+            .bpm-display { font-size: 4rem; }
             .pendulum-container { height: 80px; }
             .pendulum { height: 70px; }
-            .play-btn { width: 60px; height: 60px; font-size: 1.5rem; }
-            .beat-dot { width: 14px; height: 14px; }
+            .settings-section { gap: 8px; }
+            .setting-row { padding: 10px 12px; }
         }
 
-        @media (max-height: 550px) {
+        @media (max-height: 600px) {
             .pendulum-container { display: none; }
+            .bpm-display { font-size: 3.5rem; }
+            .play-btn { width: 60px; height: 60px; font-size: 1.5rem; }
+        }
+
+        /* iPad横向き対応 */
+        @media (min-width: 768px) and (orientation: landscape) {
+            .main-container {
+                max-width: 500px;
+            }
+            .metronome-display {
+                justify-content: center;
+            }
         }
     </style>
 </head>
@@ -578,8 +631,8 @@
             <p>• スライダー：BPM調整<br>
             • 拍子：+/-で1〜12拍に変更<br>
             • 音色：5種類から選択可能<br>
-            • アクセント：1拍目強調のON/OFF<br>
-            • 音量：サウンドのON/OFF</p>
+            • 🔔：1拍目アクセントのON/OFF<br>
+            • 🔊：サウンドのON/OFF</p>
         </div>
     </div>
 
@@ -617,23 +670,28 @@
                 <button class="preset-btn" data-bpm="180">180</button>
             </div>
 
-            <!-- 拍子設定 -->
-            <div class="setting-row">
-                <span class="setting-label">拍子</span>
-                <button class="setting-btn" id="beatMinus">−</button>
-                <span class="setting-value" id="beatCount">4</span>
-                <button class="setting-btn" id="beatPlus">+</button>
-            </div>
+            <!-- 設定セクション -->
+            <div class="settings-section">
+                <!-- 拍子設定 -->
+                <div class="setting-row">
+                    <span class="setting-label">拍子</span>
+                    <div class="setting-controls">
+                        <button class="setting-btn" id="beatMinus">−</button>
+                        <span class="setting-value" id="beatCount">4</span>
+                        <button class="setting-btn" id="beatPlus">+</button>
+                    </div>
+                </div>
 
-            <!-- 音色選択 -->
-            <div class="setting-row">
-                <span class="setting-label">音色</span>
-                <div class="sound-select" id="soundSelect">
-                    <button class="sound-btn active" data-sound="click">クリック</button>
-                    <button class="sound-btn" data-sound="wood">ウッド</button>
-                    <button class="sound-btn" data-sound="beep">ビープ</button>
-                    <button class="sound-btn" data-sound="soft">ソフト</button>
-                    <button class="sound-btn" data-sound="drum">ドラム</button>
+                <!-- 音色選択 -->
+                <div class="setting-row">
+                    <span class="setting-label">音色</span>
+                    <div class="sound-select" id="soundSelect">
+                        <button class="sound-btn active" data-sound="click">クリック</button>
+                        <button class="sound-btn" data-sound="wood">ウッド</button>
+                        <button class="sound-btn" data-sound="beep">ビープ</button>
+                        <button class="sound-btn" data-sound="soft">ソフト</button>
+                        <button class="sound-btn" data-sound="drum">ドラム</button>
+                    </div>
                 </div>
             </div>
 
@@ -704,12 +762,19 @@
         });
 
         // メニュー制御
-        el.menuBtn.addEventListener('click', () => {
+        el.menuBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             el.menuOverlay.classList.add('show');
             el.sideMenu.classList.add('show');
         });
 
-        el.closeMenuBtn.addEventListener('click', closeMenu);
+        el.closeMenuBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            closeMenu();
+        });
+
         el.menuOverlay.addEventListener('click', closeMenu);
 
         function closeMenu() {
@@ -764,7 +829,6 @@
                 osc.type = config.type;
                 osc.frequency.setValueAtTime(config.freq, time);
 
-                // ドラム音の場合はピッチを下げる
                 if (state.soundType === 'drum') {
                     osc.frequency.exponentialRampToValueAtTime(config.freq * 0.5, time + config.decay);
                 }
@@ -783,7 +847,7 @@
             }
         }
 
-        // スケジューラー（安定版）
+        // スケジューラー
         function scheduler() {
             if (!state.isPlaying || !audioContext) return;
 
@@ -796,10 +860,8 @@
                 const noteTime = nextNoteTime;
                 const isAccent = beatNumber === 0;
 
-                // 音をスケジュール
                 playBeatSound(noteTime, isAccent);
 
-                // ビジュアル更新
                 const delay = Math.max(0, (noteTime - audioContext.currentTime) * 1000);
                 setTimeout(() => {
                     if (state.isPlaying) {
@@ -807,7 +869,6 @@
                     }
                 }, delay);
 
-                // 次のビートへ
                 nextNoteTime += secondsPerBeat;
                 state.currentBeat = (state.currentBeat + 1) % state.beatsPerMeasure;
             }
@@ -817,11 +878,9 @@
 
         // ビジュアル更新
         function updateVisuals(beatNumber) {
-            // BPMパルス
             el.bpmDisplay.classList.add('beat');
             setTimeout(() => el.bpmDisplay.classList.remove('beat'), 80);
 
-            // ビートインジケーター
             const dots = el.beatIndicators.children;
             for (let i = 0; i < dots.length; i++) {
                 dots[i].classList.remove('active', 'accent');
@@ -833,7 +892,6 @@
                 }
             }
 
-            // ペンデュラム
             const angle = state.pendulumDirection * 25;
             el.pendulum.style.transform = `translateX(-50%) rotate(${angle}deg)`;
             state.pendulumDirection *= -1;
@@ -871,7 +929,6 @@
             el.playBtn.innerHTML = '▶';
             el.pendulum.style.transform = 'translateX(-50%) rotate(0deg)';
 
-            // インジケーターリセット
             const dots = el.beatIndicators.children;
             for (let i = 0; i < dots.length; i++) {
                 dots[i].classList.remove('active', 'accent');
@@ -879,7 +936,8 @@
         }
 
         // 再生ボタン
-        el.playBtn.addEventListener('click', async () => {
+        el.playBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
             if (state.isPlaying) {
                 stopMetronome();
             } else {
@@ -897,6 +955,7 @@
         // BPMプリセット
         el.bpmPresets.addEventListener('click', (e) => {
             if (e.target.classList.contains('preset-btn')) {
+                e.preventDefault();
                 state.bpm = parseInt(e.target.dataset.bpm);
                 el.bpmDisplay.textContent = state.bpm;
                 el.bpmSlider.value = state.bpm;
@@ -923,23 +982,46 @@
         }
 
         // 拍子変更
-        el.beatMinus.addEventListener('click', () => {
+        function decreaseBeat() {
             if (state.beatsPerMeasure > 1) {
                 state.beatsPerMeasure--;
                 updateBeatIndicators();
             }
-        });
+        }
 
-        el.beatPlus.addEventListener('click', () => {
+        function increaseBeat() {
             if (state.beatsPerMeasure < 12) {
                 state.beatsPerMeasure++;
                 updateBeatIndicators();
             }
+        }
+
+        // クリックイベント
+        el.beatMinus.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            decreaseBeat();
+        });
+
+        el.beatPlus.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            increaseBeat();
+        });
+
+        // タッチイベント（iOS対策）- pointerイベントを使用
+        el.beatMinus.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+        });
+
+        el.beatPlus.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
         });
 
         // 音色選択
         el.soundSelect.addEventListener('click', (e) => {
             if (e.target.classList.contains('sound-btn')) {
+                e.preventDefault();
                 state.soundType = e.target.dataset.sound;
                 document.querySelectorAll('.sound-btn').forEach(btn => {
                     btn.classList.toggle('active', btn.dataset.sound === state.soundType);
@@ -948,24 +1030,19 @@
         });
 
         // アクセントトグル
-        el.accentBtn.addEventListener('click', () => {
+        el.accentBtn.addEventListener('click', (e) => {
+            e.preventDefault();
             state.accentEnabled = !state.accentEnabled;
             el.accentBtn.classList.toggle('active', state.accentEnabled);
         });
 
         // サウンドトグル
-        el.soundBtn.addEventListener('click', () => {
+        el.soundBtn.addEventListener('click', (e) => {
+            e.preventDefault();
             state.soundEnabled = !state.soundEnabled;
             el.soundBtn.classList.toggle('active', state.soundEnabled);
             el.soundBtn.textContent = state.soundEnabled ? '🔊' : '🔇';
         });
-
-        // タッチイベント制御（横スクロール防止）
-        document.addEventListener('touchmove', (e) => {
-            if (el.sideMenu.contains(e.target)) return;
-            if (e.target.closest('.bpm-slider')) return;
-            e.preventDefault();
-        }, { passive: false });
 
         // 画面タップでオーディオ初期化
         document.addEventListener('touchstart', initAudio, { once: true });
@@ -979,7 +1056,7 @@
             }
         });
 
-        // visibilitychange対応（バックグラウンド時の停止）
+        // バックグラウンド時の停止
         document.addEventListener('visibilitychange', () => {
             if (document.hidden && state.isPlaying) {
                 stopMetronome();
