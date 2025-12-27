@@ -24,26 +24,23 @@
             -webkit-tap-highlight-color: transparent;
         }
 
-        html, body {
+        html {
             width: 100%;
             height: 100%;
-            overflow: hidden;
-            position: fixed;
-            top: 0;
-            left: 0;
-            touch-action: manipulation;
         }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             color: #ffffff;
+            width: 100%;
+            min-height: 100%;
+            min-height: 100dvh;
             display: flex;
             flex-direction: column;
-            padding-top: env(safe-area-inset-top);
-            padding-bottom: env(safe-area-inset-bottom);
-            padding-left: env(safe-area-inset-left);
-            padding-right: env(safe-area-inset-right);
+            overflow-x: hidden;
+            overflow-y: auto;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
         }
 
         /* スプラッシュスクリーン */
@@ -104,12 +101,9 @@
             display: flex;
             flex-direction: column;
             width: 100%;
-            max-width: 600px;
+            max-width: 500px;
             margin: 0 auto;
             padding: 15px;
-            overflow-y: auto;
-            overflow-x: hidden;
-            -webkit-overflow-scrolling: touch;
         }
 
         /* ヘッダー */
@@ -117,8 +111,7 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 10px;
-            flex-shrink: 0;
+            margin-bottom: 15px;
         }
 
         .logo-title {
@@ -150,9 +143,6 @@
             color: white;
             font-size: 1.5rem;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
 
         /* サイドメニュー */
@@ -194,10 +184,6 @@
             right: 0;
         }
 
-        .side-menu * {
-            touch-action: auto !important;
-        }
-
         .menu-header {
             display: flex;
             justify-content: space-between;
@@ -234,9 +220,6 @@
             font-size: 0.9rem;
             color: #e94560;
             margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
 
         .info-section p {
@@ -245,14 +228,12 @@
             line-height: 1.6;
         }
 
-        /* メトロノームディスプレイ */
-        .metronome-display {
-            flex: 1;
+        /* メトロノームセクション */
+        .metronome-section {
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-start;
-            padding-top: 10px;
+            text-align: center;
         }
 
         .bpm-display {
@@ -260,9 +241,8 @@
             font-weight: bold;
             color: #fff;
             text-shadow: 0 0 30px rgba(233, 69, 96, 0.5);
-            margin-bottom: 0;
-            transition: transform 0.08s, color 0.08s;
             line-height: 1;
+            transition: transform 0.08s, color 0.08s;
         }
 
         .bpm-display.beat {
@@ -283,8 +263,6 @@
             margin-bottom: 15px;
             flex-wrap: wrap;
             justify-content: center;
-            max-width: 280px;
-            min-height: 24px;
         }
 
         .beat-dot {
@@ -293,7 +271,6 @@
             border-radius: 50%;
             background: rgba(255,255,255,0.2);
             transition: all 0.08s;
-            flex-shrink: 0;
         }
 
         .beat-dot.active {
@@ -313,7 +290,6 @@
             height: 100px;
             position: relative;
             margin-bottom: 15px;
-            flex-shrink: 0;
         }
 
         .pendulum {
@@ -354,10 +330,10 @@
         }
 
         /* BPMスライダー */
-        .bpm-slider-container {
+        .slider-container {
             width: 100%;
             max-width: 300px;
-            margin-bottom: 12px;
+            margin-bottom: 15px;
             padding: 0 10px;
         }
 
@@ -374,21 +350,11 @@
         .bpm-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 28px;
-            height: 28px;
+            width: 30px;
+            height: 30px;
             background: linear-gradient(135deg, #e94560, #ff6b6b);
             border-radius: 50%;
             cursor: pointer;
-            box-shadow: 0 0 15px rgba(233, 69, 96, 0.5);
-        }
-
-        .bpm-slider::-moz-range-thumb {
-            width: 28px;
-            height: 28px;
-            background: linear-gradient(135deg, #e94560, #ff6b6b);
-            border-radius: 50%;
-            cursor: pointer;
-            border: none;
         }
 
         /* BPMプリセット */
@@ -397,9 +363,7 @@
             gap: 8px;
             flex-wrap: wrap;
             justify-content: center;
-            margin-bottom: 15px;
-            width: 100%;
-            max-width: 320px;
+            margin-bottom: 20px;
         }
 
         .preset-btn {
@@ -410,58 +374,41 @@
             color: #ccc;
             font-size: 0.9rem;
             cursor: pointer;
-            transition: all 0.2s;
-            min-width: 50px;
         }
 
-        .preset-btn:active,
         .preset-btn.active {
             background: rgba(233, 69, 96, 0.4);
             color: #fff;
         }
 
-        /* 設定セクション */
-        .settings-section {
-            width: 100%;
-            max-width: 350px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-bottom: 15px;
-        }
-
-        .setting-row {
+        /* 拍子設定 - 明確に表示 */
+        .beat-setting {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 15px;
+            margin-bottom: 15px;
+            background: rgba(255,255,255,0.08);
+            padding: 15px 20px;
+            border-radius: 15px;
             width: 100%;
-            background: rgba(255,255,255,0.05);
-            padding: 12px 15px;
-            border-radius: 12px;
+            max-width: 280px;
         }
 
-        .setting-label {
+        .beat-setting-label {
+            font-size: 1rem;
             color: #aaa;
-            font-size: 0.95rem;
-            min-width: 45px;
-            text-align: right;
         }
 
-        .setting-controls {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .setting-btn {
-            width: 44px;
-            height: 44px;
+        .beat-btn {
+            width: 50px;
+            height: 50px;
             background: rgba(255,255,255,0.15);
-            border: none;
-            border-radius: 10px;
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 12px;
             color: white;
-            font-size: 1.4rem;
+            font-size: 1.8rem;
+            font-weight: bold;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -470,12 +417,13 @@
             user-select: none;
         }
 
-        .setting-btn:active {
-            background: rgba(233, 69, 96, 0.4);
+        .beat-btn:active {
+            background: rgba(233, 69, 96, 0.5);
+            border-color: #e94560;
         }
 
-        .setting-value {
-            font-size: 1.4rem;
+        .beat-value {
+            font-size: 1.8rem;
             font-weight: bold;
             min-width: 50px;
             text-align: center;
@@ -483,22 +431,36 @@
         }
 
         /* 音色選択 */
-        .sound-select {
+        .sound-setting {
             display: flex;
-            gap: 6px;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 320px;
+        }
+
+        .sound-label {
+            font-size: 1rem;
+            color: #aaa;
+        }
+
+        .sound-buttons {
+            display: flex;
+            gap: 8px;
             flex-wrap: wrap;
             justify-content: center;
         }
 
         .sound-btn {
-            padding: 8px 14px;
+            padding: 10px 14px;
             background: rgba(255,255,255,0.1);
             border: none;
-            border-radius: 18px;
+            border-radius: 20px;
             color: #aaa;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             cursor: pointer;
-            transition: all 0.2s;
         }
 
         .sound-btn.active {
@@ -512,27 +474,22 @@
             gap: 25px;
             justify-content: center;
             align-items: center;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }
 
         .play-btn {
-            width: 70px;
-            height: 70px;
+            width: 80px;
+            height: 80px;
             border-radius: 50%;
             background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);
             border: none;
             color: white;
-            font-size: 1.8rem;
+            font-size: 2rem;
             cursor: pointer;
             box-shadow: 0 5px 25px rgba(233, 69, 96, 0.4);
-            transition: transform 0.2s, box-shadow 0.2s;
             display: flex;
             align-items: center;
             justify-content: center;
-        }
-
-        .play-btn:active {
-            transform: scale(0.95);
         }
 
         .play-btn.playing {
@@ -541,13 +498,13 @@
         }
 
         .control-btn {
-            width: 50px;
-            height: 50px;
+            width: 55px;
+            height: 55px;
             border-radius: 50%;
             background: rgba(255,255,255,0.1);
             border: none;
             color: white;
-            font-size: 1.3rem;
+            font-size: 1.4rem;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -556,41 +513,26 @@
 
         .control-btn.active {
             background: rgba(233, 69, 96, 0.3);
-            color: #e94560;
         }
 
         /* フッター */
         .footer {
             text-align: center;
-            padding: 8px;
+            padding: 15px;
             color: #666;
             font-size: 0.75rem;
-            flex-shrink: 0;
+            margin-top: auto;
         }
 
-        /* レスポンシブ - 小さい画面 */
-        @media (max-height: 700px) {
+        /* レスポンシブ */
+        @media (max-height: 650px) {
             .bpm-display { font-size: 4rem; }
             .pendulum-container { height: 80px; }
             .pendulum { height: 70px; }
-            .settings-section { gap: 8px; }
-            .setting-row { padding: 10px 12px; }
         }
 
-        @media (max-height: 600px) {
+        @media (max-height: 550px) {
             .pendulum-container { display: none; }
-            .bpm-display { font-size: 3.5rem; }
-            .play-btn { width: 60px; height: 60px; font-size: 1.5rem; }
-        }
-
-        /* iPad横向き対応 */
-        @media (min-width: 768px) and (orientation: landscape) {
-            .main-container {
-                max-width: 500px;
-            }
-            .metronome-display {
-                justify-content: center;
-            }
         }
     </style>
 </head>
@@ -629,7 +571,7 @@
         <div class="info-section">
             <h3>⚙️ 操作方法</h3>
             <p>• スライダー：BPM調整<br>
-            • 拍子：+/-で1〜12拍に変更<br>
+            • 拍子：−/+で1〜12拍に変更<br>
             • 音色：5種類から選択可能<br>
             • 🔔：1拍目アクセントのON/OFF<br>
             • 🔊：サウンドのON/OFF</p>
@@ -646,7 +588,7 @@
             <button class="menu-btn" id="menuBtn">☰</button>
         </div>
 
-        <div class="metronome-display">
+        <div class="metronome-section">
             <div class="bpm-display" id="bpmDisplay">120</div>
             <div class="bpm-label">BPM</div>
 
@@ -657,11 +599,11 @@
                 <div class="pendulum-pivot"></div>
             </div>
 
-            <div class="bpm-slider-container">
+            <div class="slider-container">
                 <input type="range" class="bpm-slider" id="bpmSlider" min="30" max="240" value="120">
             </div>
 
-            <div class="bpm-presets" id="bpmPresets">
+            <div class="bpm-presets">
                 <button class="preset-btn" data-bpm="60">60</button>
                 <button class="preset-btn" data-bpm="80">80</button>
                 <button class="preset-btn" data-bpm="100">100</button>
@@ -670,35 +612,30 @@
                 <button class="preset-btn" data-bpm="180">180</button>
             </div>
 
-            <!-- 設定セクション -->
-            <div class="settings-section">
-                <!-- 拍子設定 -->
-                <div class="setting-row">
-                    <span class="setting-label">拍子</span>
-                    <div class="setting-controls">
-                        <button class="setting-btn" id="beatMinus">−</button>
-                        <span class="setting-value" id="beatCount">4</span>
-                        <button class="setting-btn" id="beatPlus">+</button>
-                    </div>
-                </div>
+            <!-- 拍子設定 -->
+            <div class="beat-setting">
+                <span class="beat-setting-label">拍子</span>
+                <button class="beat-btn" id="beatMinus" type="button">−</button>
+                <span class="beat-value" id="beatCount">4</span>
+                <button class="beat-btn" id="beatPlus" type="button">+</button>
+            </div>
 
-                <!-- 音色選択 -->
-                <div class="setting-row">
-                    <span class="setting-label">音色</span>
-                    <div class="sound-select" id="soundSelect">
-                        <button class="sound-btn active" data-sound="click">クリック</button>
-                        <button class="sound-btn" data-sound="wood">ウッド</button>
-                        <button class="sound-btn" data-sound="beep">ビープ</button>
-                        <button class="sound-btn" data-sound="soft">ソフト</button>
-                        <button class="sound-btn" data-sound="drum">ドラム</button>
-                    </div>
+            <!-- 音色設定 -->
+            <div class="sound-setting">
+                <span class="sound-label">音色</span>
+                <div class="sound-buttons" id="soundButtons">
+                    <button class="sound-btn active" data-sound="click" type="button">クリック</button>
+                    <button class="sound-btn" data-sound="wood" type="button">ウッド</button>
+                    <button class="sound-btn" data-sound="beep" type="button">ビープ</button>
+                    <button class="sound-btn" data-sound="soft" type="button">ソフト</button>
+                    <button class="sound-btn" data-sound="drum" type="button">ドラム</button>
                 </div>
             </div>
 
             <div class="controls">
-                <button class="control-btn active" id="accentBtn" title="アクセント">🔔</button>
-                <button class="play-btn" id="playBtn">▶</button>
-                <button class="control-btn active" id="soundBtn" title="サウンド">🔊</button>
+                <button class="control-btn active" id="accentBtn" type="button">🔔</button>
+                <button class="play-btn" id="playBtn" type="button">▶</button>
+                <button class="control-btn active" id="soundBtn" type="button">🔊</button>
             </div>
         </div>
 
@@ -706,7 +643,7 @@
     </div>
 
     <script>
-        // 状態管理
+        // 状態
         const state = {
             isPlaying: false,
             bpm: 120,
@@ -718,166 +655,115 @@
             pendulumDirection: 1
         };
 
-        // オーディオ関連
+        // オーディオ
         let audioContext = null;
         let nextNoteTime = 0;
         let schedulerTimer = null;
-        let isAudioInitialized = false;
 
-        // 音色定義
+        // 音色
         const soundTypes = {
-            click: { accent: { freq: 1000, type: 'sine', attack: 0.001, decay: 0.08 }, normal: { freq: 800, type: 'sine', attack: 0.001, decay: 0.06 } },
-            wood: { accent: { freq: 700, type: 'triangle', attack: 0.001, decay: 0.05 }, normal: { freq: 500, type: 'triangle', attack: 0.001, decay: 0.04 } },
-            beep: { accent: { freq: 1200, type: 'square', attack: 0.001, decay: 0.1 }, normal: { freq: 900, type: 'square', attack: 0.001, decay: 0.08 } },
-            soft: { accent: { freq: 600, type: 'sine', attack: 0.01, decay: 0.15 }, normal: { freq: 400, type: 'sine', attack: 0.01, decay: 0.12 } },
-            drum: { accent: { freq: 150, type: 'triangle', attack: 0.001, decay: 0.12 }, normal: { freq: 100, type: 'triangle', attack: 0.001, decay: 0.1 } }
+            click: { accent: { freq: 1000, type: 'sine', decay: 0.08 }, normal: { freq: 800, type: 'sine', decay: 0.06 } },
+            wood: { accent: { freq: 700, type: 'triangle', decay: 0.05 }, normal: { freq: 500, type: 'triangle', decay: 0.04 } },
+            beep: { accent: { freq: 1200, type: 'square', decay: 0.1 }, normal: { freq: 900, type: 'square', decay: 0.08 } },
+            soft: { accent: { freq: 600, type: 'sine', decay: 0.15 }, normal: { freq: 400, type: 'sine', decay: 0.12 } },
+            drum: { accent: { freq: 150, type: 'triangle', decay: 0.12 }, normal: { freq: 100, type: 'triangle', decay: 0.1 } }
         };
 
-        // DOM要素キャッシュ
+        // DOM
+        const $ = id => document.getElementById(id);
         const el = {
-            splashScreen: document.getElementById('splashScreen'),
-            menuOverlay: document.getElementById('menuOverlay'),
-            sideMenu: document.getElementById('sideMenu'),
-            menuBtn: document.getElementById('menuBtn'),
-            closeMenuBtn: document.getElementById('closeMenuBtn'),
-            bpmDisplay: document.getElementById('bpmDisplay'),
-            bpmSlider: document.getElementById('bpmSlider'),
-            bpmPresets: document.getElementById('bpmPresets'),
-            beatIndicators: document.getElementById('beatIndicators'),
-            pendulum: document.getElementById('pendulum'),
-            beatCount: document.getElementById('beatCount'),
-            beatMinus: document.getElementById('beatMinus'),
-            beatPlus: document.getElementById('beatPlus'),
-            soundSelect: document.getElementById('soundSelect'),
-            playBtn: document.getElementById('playBtn'),
-            accentBtn: document.getElementById('accentBtn'),
-            soundBtn: document.getElementById('soundBtn')
+            splash: $('splashScreen'),
+            overlay: $('menuOverlay'),
+            menu: $('sideMenu'),
+            menuBtn: $('menuBtn'),
+            closeBtn: $('closeMenuBtn'),
+            bpmDisplay: $('bpmDisplay'),
+            bpmSlider: $('bpmSlider'),
+            beatIndicators: $('beatIndicators'),
+            pendulum: $('pendulum'),
+            beatCount: $('beatCount'),
+            beatMinus: $('beatMinus'),
+            beatPlus: $('beatPlus'),
+            soundButtons: $('soundButtons'),
+            playBtn: $('playBtn'),
+            accentBtn: $('accentBtn'),
+            soundBtn: $('soundBtn')
         };
 
-        // スプラッシュスクリーン
-        window.addEventListener('load', () => {
-            setTimeout(() => {
-                el.splashScreen.classList.add('hidden');
-            }, 1800);
-        });
+        // スプラッシュ
+        setTimeout(() => el.splash.classList.add('hidden'), 1800);
 
-        // メニュー制御
-        el.menuBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            el.menuOverlay.classList.add('show');
-            el.sideMenu.classList.add('show');
-        });
-
-        el.closeMenuBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            closeMenu();
-        });
-
-        el.menuOverlay.addEventListener('click', closeMenu);
-
-        function closeMenu() {
-            el.menuOverlay.classList.remove('show');
-            el.sideMenu.classList.remove('show');
-        }
+        // メニュー
+        el.menuBtn.onclick = () => {
+            el.overlay.classList.add('show');
+            el.menu.classList.add('show');
+        };
+        el.closeBtn.onclick = el.overlay.onclick = () => {
+            el.overlay.classList.remove('show');
+            el.menu.classList.remove('show');
+        };
 
         // オーディオ初期化
         async function initAudio() {
-            if (isAudioInitialized && audioContext && audioContext.state === 'running') {
-                return true;
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
             }
-
-            try {
-                if (!audioContext) {
-                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                }
-
-                if (audioContext.state === 'suspended') {
-                    await audioContext.resume();
-                }
-
-                // ダミー音で初期化確認
-                const osc = audioContext.createOscillator();
-                const gain = audioContext.createGain();
-                gain.gain.value = 0.001;
-                osc.connect(gain);
-                gain.connect(audioContext.destination);
-                osc.start();
-                osc.stop(audioContext.currentTime + 0.01);
-
-                isAudioInitialized = true;
-                return true;
-            } catch (e) {
-                console.error('Audio init failed:', e);
-                return false;
+            if (audioContext.state === 'suspended') {
+                await audioContext.resume();
             }
+            return audioContext.state === 'running';
         }
 
-        // ビート音再生
-        function playBeatSound(time, isAccent) {
+        // 音再生
+        function playSound(time, isAccent) {
             if (!audioContext || !state.soundEnabled) return;
-
             try {
-                const soundConfig = soundTypes[state.soundType];
-                const config = isAccent && state.accentEnabled ? soundConfig.accent : soundConfig.normal;
-                const volume = isAccent && state.accentEnabled ? 0.5 : 0.3;
+                const cfg = soundTypes[state.soundType];
+                const s = isAccent && state.accentEnabled ? cfg.accent : cfg.normal;
+                const vol = isAccent && state.accentEnabled ? 0.5 : 0.3;
 
                 const osc = audioContext.createOscillator();
                 const gain = audioContext.createGain();
 
-                osc.type = config.type;
-                osc.frequency.setValueAtTime(config.freq, time);
-
+                osc.type = s.type;
+                osc.frequency.setValueAtTime(s.freq, time);
                 if (state.soundType === 'drum') {
-                    osc.frequency.exponentialRampToValueAtTime(config.freq * 0.5, time + config.decay);
+                    osc.frequency.exponentialRampToValueAtTime(s.freq * 0.5, time + s.decay);
                 }
 
-                gain.gain.setValueAtTime(0, time);
-                gain.gain.linearRampToValueAtTime(volume, time + config.attack);
-                gain.gain.exponentialRampToValueAtTime(0.001, time + config.decay);
+                gain.gain.setValueAtTime(vol, time);
+                gain.gain.exponentialRampToValueAtTime(0.001, time + s.decay);
 
                 osc.connect(gain);
                 gain.connect(audioContext.destination);
-
                 osc.start(time);
-                osc.stop(time + config.decay + 0.01);
-            } catch (e) {
-                console.error('Sound error:', e);
-            }
+                osc.stop(time + s.decay + 0.01);
+            } catch (e) {}
         }
 
         // スケジューラー
         function scheduler() {
             if (!state.isPlaying || !audioContext) return;
 
-            const secondsPerBeat = 60.0 / state.bpm;
-            const scheduleAheadTime = 0.1;
-            const lookahead = 25;
+            const secPerBeat = 60 / state.bpm;
+            while (nextNoteTime < audioContext.currentTime + 0.1) {
+                const beat = state.currentBeat;
+                const time = nextNoteTime;
+                const isAccent = beat === 0;
 
-            while (nextNoteTime < audioContext.currentTime + scheduleAheadTime) {
-                const beatNumber = state.currentBeat;
-                const noteTime = nextNoteTime;
-                const isAccent = beatNumber === 0;
+                playSound(time, isAccent);
 
-                playBeatSound(noteTime, isAccent);
+                const delay = Math.max(0, (time - audioContext.currentTime) * 1000);
+                setTimeout(() => state.isPlaying && updateVisuals(beat), delay);
 
-                const delay = Math.max(0, (noteTime - audioContext.currentTime) * 1000);
-                setTimeout(() => {
-                    if (state.isPlaying) {
-                        updateVisuals(beatNumber);
-                    }
-                }, delay);
-
-                nextNoteTime += secondsPerBeat;
+                nextNoteTime += secPerBeat;
                 state.currentBeat = (state.currentBeat + 1) % state.beatsPerMeasure;
             }
-
-            schedulerTimer = setTimeout(scheduler, lookahead);
+            schedulerTimer = setTimeout(scheduler, 25);
         }
 
         // ビジュアル更新
-        function updateVisuals(beatNumber) {
+        function updateVisuals(beat) {
             el.bpmDisplay.classList.add('beat');
             setTimeout(() => el.bpmDisplay.classList.remove('beat'), 80);
 
@@ -885,50 +771,38 @@
             for (let i = 0; i < dots.length; i++) {
                 dots[i].classList.remove('active', 'accent');
             }
-            if (dots[beatNumber]) {
-                dots[beatNumber].classList.add('active');
-                if (beatNumber === 0 && state.accentEnabled) {
-                    dots[beatNumber].classList.add('accent');
-                }
+            if (dots[beat]) {
+                dots[beat].classList.add('active');
+                if (beat === 0 && state.accentEnabled) dots[beat].classList.add('accent');
             }
 
-            const angle = state.pendulumDirection * 25;
-            el.pendulum.style.transform = `translateX(-50%) rotate(${angle}deg)`;
+            el.pendulum.style.transform = `translateX(-50%) rotate(${state.pendulumDirection * 25}deg)`;
             state.pendulumDirection *= -1;
         }
 
-        // 再生開始
-        async function startMetronome() {
-            const audioReady = await initAudio();
-            if (!audioReady) {
-                alert('音声の初期化に失敗しました。画面をタップしてから再試行してください。');
+        // 再生
+        async function start() {
+            if (!await initAudio()) {
+                alert('音声初期化に失敗。画面をタップして再試行してください。');
                 return;
             }
-
             state.isPlaying = true;
             state.currentBeat = 0;
             state.pendulumDirection = 1;
             nextNoteTime = audioContext.currentTime + 0.05;
-
             el.playBtn.classList.add('playing');
-            el.playBtn.innerHTML = '⏸';
-
+            el.playBtn.textContent = '⏸';
             scheduler();
         }
 
         // 停止
-        function stopMetronome() {
+        function stop() {
             state.isPlaying = false;
-
-            if (schedulerTimer) {
-                clearTimeout(schedulerTimer);
-                schedulerTimer = null;
-            }
-
+            if (schedulerTimer) clearTimeout(schedulerTimer);
+            schedulerTimer = null;
             el.playBtn.classList.remove('playing');
-            el.playBtn.innerHTML = '▶';
+            el.playBtn.textContent = '▶';
             el.pendulum.style.transform = 'translateX(-50%) rotate(0deg)';
-
             const dots = el.beatIndicators.children;
             for (let i = 0; i < dots.length; i++) {
                 dots[i].classList.remove('active', 'accent');
@@ -936,141 +810,98 @@
         }
 
         // 再生ボタン
-        el.playBtn.addEventListener('click', async (e) => {
-            e.preventDefault();
-            if (state.isPlaying) {
-                stopMetronome();
-            } else {
-                await startMetronome();
-            }
-        });
+        el.playBtn.onclick = () => state.isPlaying ? stop() : start();
 
         // BPMスライダー
-        el.bpmSlider.addEventListener('input', (e) => {
-            state.bpm = parseInt(e.target.value);
+        el.bpmSlider.oninput = e => {
+            state.bpm = +e.target.value;
             el.bpmDisplay.textContent = state.bpm;
-            updatePresetButtons();
-        });
+            updatePresets();
+        };
 
-        // BPMプリセット
-        el.bpmPresets.addEventListener('click', (e) => {
-            if (e.target.classList.contains('preset-btn')) {
-                e.preventDefault();
-                state.bpm = parseInt(e.target.dataset.bpm);
+        // プリセット
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.onclick = () => {
+                state.bpm = +btn.dataset.bpm;
                 el.bpmDisplay.textContent = state.bpm;
                 el.bpmSlider.value = state.bpm;
-                updatePresetButtons();
-            }
+                updatePresets();
+            };
         });
 
-        function updatePresetButtons() {
-            document.querySelectorAll('.preset-btn').forEach(btn => {
-                btn.classList.toggle('active', parseInt(btn.dataset.bpm) === state.bpm);
+        function updatePresets() {
+            document.querySelectorAll('.preset-btn').forEach(b => {
+                b.classList.toggle('active', +b.dataset.bpm === state.bpm);
             });
         }
 
-        // ビートインジケーター更新
+        // ビートインジケーター
         function updateBeatIndicators() {
             el.beatIndicators.innerHTML = '';
             for (let i = 0; i < state.beatsPerMeasure; i++) {
-                const dot = document.createElement('div');
-                dot.className = 'beat-dot';
-                el.beatIndicators.appendChild(dot);
+                const d = document.createElement('div');
+                d.className = 'beat-dot';
+                el.beatIndicators.appendChild(d);
             }
             el.beatCount.textContent = state.beatsPerMeasure;
             state.currentBeat = 0;
         }
 
-        // 拍子変更
-        function decreaseBeat() {
+        // 拍子変更ボタン
+        el.beatMinus.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
             if (state.beatsPerMeasure > 1) {
                 state.beatsPerMeasure--;
                 updateBeatIndicators();
             }
-        }
+        };
 
-        function increaseBeat() {
+        el.beatPlus.onclick = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
             if (state.beatsPerMeasure < 12) {
                 state.beatsPerMeasure++;
                 updateBeatIndicators();
             }
-        }
-
-        // クリックイベント
-        el.beatMinus.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            decreaseBeat();
-        });
-
-        el.beatPlus.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            increaseBeat();
-        });
-
-        // タッチイベント（iOS対策）- pointerイベントを使用
-        el.beatMinus.addEventListener('pointerdown', (e) => {
-            e.preventDefault();
-        });
-
-        el.beatPlus.addEventListener('pointerdown', (e) => {
-            e.preventDefault();
-        });
+        };
 
         // 音色選択
-        el.soundSelect.addEventListener('click', (e) => {
+        el.soundButtons.onclick = e => {
             if (e.target.classList.contains('sound-btn')) {
-                e.preventDefault();
                 state.soundType = e.target.dataset.sound;
-                document.querySelectorAll('.sound-btn').forEach(btn => {
-                    btn.classList.toggle('active', btn.dataset.sound === state.soundType);
+                document.querySelectorAll('.sound-btn').forEach(b => {
+                    b.classList.toggle('active', b.dataset.sound === state.soundType);
                 });
             }
-        });
+        };
 
-        // アクセントトグル
-        el.accentBtn.addEventListener('click', (e) => {
-            e.preventDefault();
+        // アクセント
+        el.accentBtn.onclick = () => {
             state.accentEnabled = !state.accentEnabled;
             el.accentBtn.classList.toggle('active', state.accentEnabled);
-        });
+        };
 
-        // サウンドトグル
-        el.soundBtn.addEventListener('click', (e) => {
-            e.preventDefault();
+        // サウンド
+        el.soundBtn.onclick = () => {
             state.soundEnabled = !state.soundEnabled;
             el.soundBtn.classList.toggle('active', state.soundEnabled);
             el.soundBtn.textContent = state.soundEnabled ? '🔊' : '🔇';
-        });
+        };
 
-        // 画面タップでオーディオ初期化
+        // 初期化
         document.addEventListener('touchstart', initAudio, { once: true });
         document.addEventListener('click', initAudio, { once: true });
 
-        // ページ離脱時のクリーンアップ
-        window.addEventListener('beforeunload', () => {
-            stopMetronome();
-            if (audioContext) {
-                audioContext.close();
-            }
-        });
-
-        // バックグラウンド時の停止
         document.addEventListener('visibilitychange', () => {
-            if (document.hidden && state.isPlaying) {
-                stopMetronome();
-            }
+            if (document.hidden && state.isPlaying) stop();
         });
 
-        // Service Worker登録
+        // SW登録
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js')
-                .then(reg => console.log('SW registered'))
-                .catch(err => console.log('SW failed:', err));
+            navigator.serviceWorker.register('./sw.js');
         }
 
-        // 初期化
         updateBeatIndicators();
     </script>
 </body>
