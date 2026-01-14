@@ -43,7 +43,6 @@
             padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
         }
 
-        /* スプラッシュスクリーン */
         .splash-screen {
             position: fixed;
             top: 0;
@@ -95,7 +94,6 @@
             color: #888;
         }
 
-        /* メインコンテナ */
         .main-container {
             flex: 1;
             display: flex;
@@ -106,7 +104,6 @@
             padding: 15px;
         }
 
-        /* ヘッダー */
         .header {
             display: flex;
             align-items: center;
@@ -145,7 +142,6 @@
             cursor: pointer;
         }
 
-        /* サイドメニュー */
         .menu-overlay {
             position: fixed;
             top: 0;
@@ -228,7 +224,6 @@
             line-height: 1.6;
         }
 
-        /* メトロノームセクション */
         .metronome-section {
             display: flex;
             flex-direction: column;
@@ -242,11 +237,11 @@
             color: #fff;
             text-shadow: 0 0 30px rgba(233, 69, 96, 0.5);
             line-height: 1;
-            transition: transform 0.08s, color 0.08s;
+            transition: transform 0.05s, color 0.05s;
         }
 
         .bpm-display.beat {
-            transform: scale(1.1);
+            transform: scale(1.08);
             color: #e94560;
         }
 
@@ -256,7 +251,6 @@
             margin-bottom: 15px;
         }
 
-        /* ビートインジケーター */
         .beat-indicators {
             display: flex;
             gap: 10px;
@@ -270,7 +264,7 @@
             height: 18px;
             border-radius: 50%;
             background: rgba(255,255,255,0.2);
-            transition: all 0.08s;
+            transition: all 0.05s;
         }
 
         .beat-dot.active {
@@ -284,7 +278,6 @@
             box-shadow: 0 0 20px rgba(255, 107, 107, 0.9);
         }
 
-        /* ペンデュラム */
         .pendulum-container {
             width: 160px;
             height: 100px;
@@ -329,7 +322,6 @@
             z-index: 1;
         }
 
-        /* BPMスライダー */
         .slider-container {
             width: 100%;
             max-width: 300px;
@@ -357,7 +349,6 @@
             cursor: pointer;
         }
 
-        /* BPMプリセット */
         .bpm-presets {
             display: flex;
             gap: 8px;
@@ -381,7 +372,6 @@
             color: #fff;
         }
 
-        /* 拍子設定 - 明確に表示 */
         .beat-setting {
             display: flex;
             align-items: center;
@@ -413,8 +403,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            -webkit-user-select: none;
-            user-select: none;
         }
 
         .beat-btn:active {
@@ -430,7 +418,6 @@
             color: #fff;
         }
 
-        /* 音色選択 */
         .sound-setting {
             display: flex;
             flex-direction: column;
@@ -468,7 +455,6 @@
             color: #fff;
         }
 
-        /* コントロールボタン */
         .controls {
             display: flex;
             gap: 25px;
@@ -515,7 +501,6 @@
             background: rgba(233, 69, 96, 0.3);
         }
 
-        /* フッター */
         .footer {
             text-align: center;
             padding: 15px;
@@ -524,7 +509,6 @@
             margin-top: auto;
         }
 
-        /* レスポンシブ */
         @media (max-height: 650px) {
             .bpm-display { font-size: 4rem; }
             .pendulum-container { height: 80px; }
@@ -537,7 +521,6 @@
     </style>
 </head>
 <body>
-    <!-- スプラッシュスクリーン -->
     <div class="splash-screen" id="splashScreen">
         <img src="FNT512.png" alt="FNT Logo" class="splash-logo">
         <div class="splash-brand">Functional Neuro Training</div>
@@ -545,10 +528,8 @@
         <div class="splash-copyright">© 2024 Functional Neuro Training</div>
     </div>
 
-    <!-- メニューオーバーレイ -->
     <div class="menu-overlay" id="menuOverlay"></div>
 
-    <!-- サイドメニュー -->
     <div class="side-menu" id="sideMenu">
         <div class="menu-header">
             <h2>📖 使い方</h2>
@@ -578,7 +559,6 @@
         </div>
     </div>
 
-    <!-- メインコンテナ -->
     <div class="main-container">
         <div class="header">
             <div class="logo-title">
@@ -612,7 +592,6 @@
                 <button class="preset-btn" data-bpm="180">180</button>
             </div>
 
-            <!-- 拍子設定 -->
             <div class="beat-setting">
                 <span class="beat-setting-label">拍子</span>
                 <button class="beat-btn" id="beatMinus" type="button">−</button>
@@ -620,7 +599,6 @@
                 <button class="beat-btn" id="beatPlus" type="button">+</button>
             </div>
 
-            <!-- 音色設定 -->
             <div class="sound-setting">
                 <span class="sound-label">音色</span>
                 <div class="sound-buttons" id="soundButtons">
@@ -643,7 +621,9 @@
     </div>
 
     <script>
-        // 状態
+        // ===== 安定したメトロノーム実装 =====
+        // Web Audio APIの高精度タイマーを使用
+
         const state = {
             isPlaying: false,
             bpm: 120,
@@ -655,21 +635,25 @@
             pendulumDirection: 1
         };
 
-        // オーディオ
+        // オーディオ関連
         let audioContext = null;
         let nextNoteTime = 0;
-        let schedulerTimer = null;
+        let schedulerInterval = null;
+        let lastBeatTime = 0;
 
-        // 音色
-        const soundTypes = {
-            click: { accent: { freq: 1000, type: 'sine', decay: 0.08 }, normal: { freq: 800, type: 'sine', decay: 0.06 } },
-            wood: { accent: { freq: 700, type: 'triangle', decay: 0.05 }, normal: { freq: 500, type: 'triangle', decay: 0.04 } },
-            beep: { accent: { freq: 1200, type: 'square', decay: 0.1 }, normal: { freq: 900, type: 'square', decay: 0.08 } },
-            soft: { accent: { freq: 600, type: 'sine', decay: 0.15 }, normal: { freq: 400, type: 'sine', decay: 0.12 } },
-            drum: { accent: { freq: 150, type: 'triangle', decay: 0.12 }, normal: { freq: 100, type: 'triangle', decay: 0.1 } }
+        // 事前生成したオーディオバッファ
+        const audioBuffers = {};
+
+        // 音色設定
+        const soundConfigs = {
+            click: { accent: { freq: 1000, type: 'sine', decay: 0.06 }, normal: { freq: 800, type: 'sine', decay: 0.05 } },
+            wood: { accent: { freq: 700, type: 'triangle', decay: 0.04 }, normal: { freq: 500, type: 'triangle', decay: 0.03 } },
+            beep: { accent: { freq: 1200, type: 'square', decay: 0.08 }, normal: { freq: 900, type: 'square', decay: 0.06 } },
+            soft: { accent: { freq: 600, type: 'sine', decay: 0.12 }, normal: { freq: 400, type: 'sine', decay: 0.1 } },
+            drum: { accent: { freq: 150, type: 'triangle', decay: 0.1 }, normal: { freq: 100, type: 'triangle', decay: 0.08 } }
         };
 
-        // DOM
+        // DOM要素
         const $ = id => document.getElementById(id);
         const el = {
             splash: $('splashScreen'),
@@ -690,7 +674,7 @@
             soundBtn: $('soundBtn')
         };
 
-        // スプラッシュ
+        // スプラッシュ画面
         setTimeout(() => el.splash.classList.add('hidden'), 1800);
 
         // メニュー
@@ -703,106 +687,223 @@
             el.menu.classList.remove('show');
         };
 
-        // オーディオ初期化
+        // オーディオコンテキスト初期化
         async function initAudio() {
-            if (!audioContext) {
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            if (audioContext.state === 'suspended') {
-                await audioContext.resume();
-            }
-            return audioContext.state === 'running';
-        }
+            if (audioContext && audioContext.state === 'running') return true;
 
-        // 音再生
-        function playSound(time, isAccent) {
-            if (!audioContext || !state.soundEnabled) return;
             try {
-                const cfg = soundTypes[state.soundType];
-                const s = isAccent && state.accentEnabled ? cfg.accent : cfg.normal;
-                const vol = isAccent && state.accentEnabled ? 0.5 : 0.3;
-
-                const osc = audioContext.createOscillator();
-                const gain = audioContext.createGain();
-
-                osc.type = s.type;
-                osc.frequency.setValueAtTime(s.freq, time);
-                if (state.soundType === 'drum') {
-                    osc.frequency.exponentialRampToValueAtTime(s.freq * 0.5, time + s.decay);
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 }
 
-                gain.gain.setValueAtTime(vol, time);
-                gain.gain.exponentialRampToValueAtTime(0.001, time + s.decay);
+                if (audioContext.state === 'suspended') {
+                    await audioContext.resume();
+                }
 
+                // ダミー音で初期化（iOS対策）
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                gain.gain.value = 0.001;
                 osc.connect(gain);
                 gain.connect(audioContext.destination);
-                osc.start(time);
-                osc.stop(time + s.decay + 0.01);
-            } catch (e) {}
+                osc.start();
+                osc.stop(audioContext.currentTime + 0.01);
+
+                // オーディオバッファを事前生成
+                generateAudioBuffers();
+
+                return true;
+            } catch (e) {
+                console.error('Audio init error:', e);
+                return false;
+            }
         }
 
-        // スケジューラー
+        // オーディオバッファ事前生成（負荷軽減）
+        function generateAudioBuffers() {
+            const sampleRate = audioContext.sampleRate;
+            const duration = 0.15; // 150ms
+
+            for (const [soundName, config] of Object.entries(soundConfigs)) {
+                audioBuffers[soundName] = {
+                    accent: createBuffer(config.accent, sampleRate, duration),
+                    normal: createBuffer(config.normal, sampleRate, duration)
+                };
+            }
+        }
+
+        function createBuffer(config, sampleRate, duration) {
+            const length = Math.floor(sampleRate * duration);
+            const buffer = audioContext.createBuffer(1, length, sampleRate);
+            const data = buffer.getChannelData(0);
+
+            const freq = config.freq;
+            const decay = config.decay;
+
+            for (let i = 0; i < length; i++) {
+                const t = i / sampleRate;
+                let sample = 0;
+
+                // 波形生成
+                switch (config.type) {
+                    case 'sine':
+                        sample = Math.sin(2 * Math.PI * freq * t);
+                        break;
+                    case 'triangle':
+                        sample = 2 * Math.abs(2 * (t * freq - Math.floor(t * freq + 0.5))) - 1;
+                        break;
+                    case 'square':
+                        sample = Math.sin(2 * Math.PI * freq * t) > 0 ? 0.5 : -0.5;
+                        break;
+                }
+
+                // エンベロープ（減衰）
+                const envelope = Math.exp(-t / decay);
+                data[i] = sample * envelope * 0.5;
+            }
+
+            return buffer;
+        }
+
+        // 音再生（バッファ使用）
+        function playSound(time, isAccent) {
+            if (!audioContext || !state.soundEnabled) return;
+
+            try {
+                const buffers = audioBuffers[state.soundType];
+                if (!buffers) return;
+
+                const buffer = (isAccent && state.accentEnabled) ? buffers.accent : buffers.normal;
+                const volume = (isAccent && state.accentEnabled) ? 0.8 : 0.5;
+
+                const source = audioContext.createBufferSource();
+                const gainNode = audioContext.createGain();
+
+                source.buffer = buffer;
+                gainNode.gain.value = volume;
+
+                source.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                source.start(time);
+            } catch (e) {
+                console.error('Play error:', e);
+            }
+        }
+
+        // 高精度スケジューラー
+        // lookahead: 先読み時間（長いほど安定、短いほどレスポンシブ）
+        // interval: スケジューラー実行間隔
+        const LOOKAHEAD = 0.15;  // 150ms先まで予約
+        const INTERVAL = 10;     // 10msごとにチェック
+
         function scheduler() {
             if (!state.isPlaying || !audioContext) return;
 
-            const secPerBeat = 60 / state.bpm;
-            while (nextNoteTime < audioContext.currentTime + 0.1) {
-                const beat = state.currentBeat;
-                const time = nextNoteTime;
-                const isAccent = beat === 0;
+            const secondsPerBeat = 60.0 / state.bpm;
 
-                playSound(time, isAccent);
+            // 先読み時間内のすべてのビートをスケジュール
+            while (nextNoteTime < audioContext.currentTime + LOOKAHEAD) {
+                const beatNumber = state.currentBeat;
+                const noteTime = nextNoteTime;
+                const isAccent = beatNumber === 0;
 
-                const delay = Math.max(0, (time - audioContext.currentTime) * 1000);
-                setTimeout(() => state.isPlaying && updateVisuals(beat), delay);
+                // 音をスケジュール
+                playSound(noteTime, isAccent);
 
-                nextNoteTime += secPerBeat;
+                // ビジュアル更新用のキュー
+                scheduleVisualUpdate(noteTime, beatNumber);
+
+                // 次のビートへ
+                nextNoteTime += secondsPerBeat;
                 state.currentBeat = (state.currentBeat + 1) % state.beatsPerMeasure;
             }
-            schedulerTimer = setTimeout(scheduler, 25);
+        }
+
+        // ビジュアル更新キュー
+        const visualQueue = [];
+
+        function scheduleVisualUpdate(time, beatNumber) {
+            visualQueue.push({ time, beatNumber });
+        }
+
+        // requestAnimationFrameでビジュアル更新
+        function visualUpdater() {
+            if (!state.isPlaying) return;
+
+            const currentTime = audioContext ? audioContext.currentTime : 0;
+
+            while (visualQueue.length > 0 && visualQueue[0].time <= currentTime + 0.02) {
+                const item = visualQueue.shift();
+                updateVisuals(item.beatNumber);
+            }
+
+            requestAnimationFrame(visualUpdater);
         }
 
         // ビジュアル更新
-        function updateVisuals(beat) {
+        function updateVisuals(beatNumber) {
+            // BPMパルス
             el.bpmDisplay.classList.add('beat');
-            setTimeout(() => el.bpmDisplay.classList.remove('beat'), 80);
+            setTimeout(() => el.bpmDisplay.classList.remove('beat'), 60);
 
+            // ビートインジケーター
             const dots = el.beatIndicators.children;
             for (let i = 0; i < dots.length; i++) {
                 dots[i].classList.remove('active', 'accent');
             }
-            if (dots[beat]) {
-                dots[beat].classList.add('active');
-                if (beat === 0 && state.accentEnabled) dots[beat].classList.add('accent');
+            if (dots[beatNumber]) {
+                dots[beatNumber].classList.add('active');
+                if (beatNumber === 0 && state.accentEnabled) {
+                    dots[beatNumber].classList.add('accent');
+                }
             }
 
+            // ペンデュラム
             el.pendulum.style.transform = `translateX(-50%) rotate(${state.pendulumDirection * 25}deg)`;
             state.pendulumDirection *= -1;
         }
 
-        // 再生
+        // 再生開始
         async function start() {
             if (!await initAudio()) {
-                alert('音声初期化に失敗。画面をタップして再試行してください。');
+                alert('音声の初期化に失敗しました。画面をタップして再試行してください。');
                 return;
             }
+
             state.isPlaying = true;
             state.currentBeat = 0;
             state.pendulumDirection = 1;
+            visualQueue.length = 0;
+
+            // 少し先からスタート（安定性向上）
             nextNoteTime = audioContext.currentTime + 0.05;
+
             el.playBtn.classList.add('playing');
             el.playBtn.textContent = '⏸';
-            scheduler();
+
+            // setIntervalで安定したスケジューリング
+            schedulerInterval = setInterval(scheduler, INTERVAL);
+            
+            // ビジュアル更新ループ開始
+            requestAnimationFrame(visualUpdater);
         }
 
         // 停止
         function stop() {
             state.isPlaying = false;
-            if (schedulerTimer) clearTimeout(schedulerTimer);
-            schedulerTimer = null;
+
+            if (schedulerInterval) {
+                clearInterval(schedulerInterval);
+                schedulerInterval = null;
+            }
+
+            visualQueue.length = 0;
+
             el.playBtn.classList.remove('playing');
             el.playBtn.textContent = '▶';
             el.pendulum.style.transform = 'translateX(-50%) rotate(0deg)';
+
             const dots = el.beatIndicators.children;
             for (let i = 0; i < dots.length; i++) {
                 dots[i].classList.remove('active', 'accent');
@@ -847,19 +948,17 @@
             state.currentBeat = 0;
         }
 
-        // 拍子変更ボタン
-        el.beatMinus.onclick = function(e) {
+        // 拍子変更
+        el.beatMinus.onclick = e => {
             e.preventDefault();
-            e.stopPropagation();
             if (state.beatsPerMeasure > 1) {
                 state.beatsPerMeasure--;
                 updateBeatIndicators();
             }
         };
 
-        el.beatPlus.onclick = function(e) {
+        el.beatPlus.onclick = e => {
             e.preventDefault();
-            e.stopPropagation();
             if (state.beatsPerMeasure < 12) {
                 state.beatsPerMeasure++;
                 updateBeatIndicators();
@@ -889,19 +988,21 @@
             el.soundBtn.textContent = state.soundEnabled ? '🔊' : '🔇';
         };
 
-        // 初期化
+        // 初期化イベント
         document.addEventListener('touchstart', initAudio, { once: true });
         document.addEventListener('click', initAudio, { once: true });
 
+        // バックグラウンド時は停止
         document.addEventListener('visibilitychange', () => {
             if (document.hidden && state.isPlaying) stop();
         });
 
-        // SW登録
+        // Service Worker
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./sw.js');
         }
 
+        // 初期化
         updateBeatIndicators();
     </script>
 </body>
