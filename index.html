@@ -1,59 +1,1167 @@
-// Service Worker for FNT Metronome
-const CACHE_NAME = 'fnt-metronome-v2.0';
-const urlsToCache = [
-  './',
-  './index.html',
-  './manifest.json',
-  './FNT512.png',
-  './FNT512-transparent.png'
-];
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="application-name" content="FNT Metronome">
+    <meta name="apple-mobile-web-app-title" content="FNT Metronome">
+    
+    <link rel="icon" href="FNT512.png">
+    <link rel="apple-touch-icon" href="FNT512.png">
+    <meta name="theme-color" content="#1a1a2e">
+    
+    <title>FNT Metronome</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
 
-// インストール時にキャッシュ
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
-      })
-      .then(() => self.skipWaiting())
-  );
-});
+        html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
 
-// アクティベート時に古いキャッシュを削除
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('Deleting old cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    }).then(() => self.clients.claim())
-  );
-});
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #ffffff;
+            width: 100%;
+            height: 100%;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+            touch-action: none;
+        }
 
-// フェッチ時にキャッシュから返す（Network First戦略）
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    fetch(event.request)
-      .then(response => {
-        // 成功したらキャッシュを更新
-        if (response && response.status === 200) {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME)
-            .then(cache => {
-              cache.put(event.request, responseClone);
+        .splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        .splash-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .splash-logo {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .splash-brand {
+            font-size: 1.1rem;
+            color: #333;
+            margin-bottom: 8px;
+            letter-spacing: 1px;
+        }
+
+        .splash-title {
+            font-size: 1.8rem;
+            background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .splash-copyright {
+            font-size: 0.75rem;
+            color: #888;
+        }
+
+        .main-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 15px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-y !important;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            flex-shrink: 0;
+        }
+
+        .logo-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+        }
+
+        .header h1 {
+            font-size: 1.4rem;
+            background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .menu-btn {
+            width: 44px;
+            height: 44px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+
+        .menu-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+
+        .menu-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .side-menu {
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 280px;
+            max-width: 80vw;
+            height: 100%;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            z-index: 1001;
+            transition: right 0.3s ease;
+            padding: 20px;
+            padding-top: calc(20px + env(safe-area-inset-top));
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            touch-action: pan-y !important;
+        }
+
+        .side-menu.show {
+            right: 0;
+        }
+
+        .side-menu * {
+            touch-action: auto !important;
+        }
+
+        .menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .menu-header h2 {
+            font-size: 1.2rem;
+            color: #e94560;
+        }
+
+        .close-btn {
+            width: 36px;
+            height: 36px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        .info-section {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .info-section h3 {
+            font-size: 0.9rem;
+            color: #e94560;
+            margin-bottom: 10px;
+        }
+
+        .info-section p {
+            font-size: 0.85rem;
+            color: #ccc;
+            line-height: 1.6;
+        }
+
+        .metronome-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            flex: 1;
+        }
+
+        .bpm-display {
+            font-size: 5rem;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 0 30px rgba(233, 69, 96, 0.5);
+            line-height: 1;
+            transition: transform 0.05s, color 0.05s;
+        }
+
+        .bpm-display.beat {
+            transform: scale(1.08);
+            color: #e94560;
+        }
+
+        .bpm-label {
+            font-size: 1.2rem;
+            color: #888;
+            margin-bottom: 15px;
+        }
+
+        .beat-indicators {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .beat-dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            transition: all 0.05s;
+        }
+
+        .beat-dot.active {
+            background: #e94560;
+            box-shadow: 0 0 15px rgba(233, 69, 96, 0.8);
+            transform: scale(1.3);
+        }
+
+        .beat-dot.accent {
+            background: #ff6b6b;
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.9);
+        }
+
+        .pendulum-container {
+            width: 160px;
+            height: 100px;
+            position: relative;
+            margin-bottom: 15px;
+        }
+
+        .pendulum {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 4px;
+            height: 85px;
+            background: linear-gradient(to bottom, #e94560, #ff6b6b);
+            transform-origin: bottom center;
+            transform: translateX(-50%) rotate(0deg);
+            border-radius: 2px;
+            transition: transform 0.1s ease-out;
+        }
+
+        .pendulum::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 18px;
+            height: 18px;
+            background: radial-gradient(circle, #ff6b6b, #e94560);
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(233, 69, 96, 0.6);
+        }
+
+        .pendulum-pivot {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 12px;
+            background: #fff;
+            border-radius: 50%;
+            z-index: 1;
+        }
+
+        .slider-container {
+            width: 100%;
+            max-width: 300px;
+            margin-bottom: 15px;
+            padding: 0 10px;
+            touch-action: pan-x !important;
+        }
+
+        .bpm-slider {
+            width: 100%;
+            height: 8px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            outline: none;
+            touch-action: pan-x !important;
+        }
+
+        .bpm-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 30px;
+            height: 30px;
+            background: linear-gradient(135deg, #e94560, #ff6b6b);
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        .bpm-presets {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .preset-btn {
+            padding: 10px 16px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 20px;
+            color: #ccc;
+            font-size: 0.9rem;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        .preset-btn.active {
+            background: rgba(233, 69, 96, 0.4);
+            color: #fff;
+        }
+
+        .beat-setting {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 15px;
+            background: rgba(255,255,255,0.08);
+            padding: 15px 20px;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 280px;
+        }
+
+        .beat-setting-label {
+            font-size: 1rem;
+            color: #aaa;
+        }
+
+        .beat-btn {
+            width: 50px;
+            height: 50px;
+            background: rgba(255,255,255,0.15);
+            border: 2px solid rgba(255,255,255,0.2);
+            border-radius: 12px;
+            color: white;
+            font-size: 1.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
+        }
+
+        .beat-btn:active {
+            background: rgba(233, 69, 96, 0.5);
+            border-color: #e94560;
+        }
+
+        .beat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            min-width: 50px;
+            text-align: center;
+            color: #fff;
+        }
+
+        .sound-setting {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 320px;
+        }
+
+        .sound-label {
+            font-size: 1rem;
+            color: #aaa;
+        }
+
+        .sound-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .sound-btn {
+            padding: 10px 14px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 20px;
+            color: #aaa;
+            font-size: 0.9rem;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        .sound-btn.active {
+            background: rgba(233, 69, 96, 0.4);
+            color: #fff;
+        }
+
+        .controls {
+            display: flex;
+            gap: 25px;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .play-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #e94560 0%, #ff6b6b 100%);
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            box-shadow: 0 5px 25px rgba(233, 69, 96, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
+        }
+
+        .play-btn.playing {
+            background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+            box-shadow: 0 5px 25px rgba(46, 204, 113, 0.4);
+        }
+
+        .control-btn {
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            font-size: 1.4rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
+        }
+
+        .control-btn.active {
+            background: rgba(233, 69, 96, 0.3);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 15px;
+            color: #666;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+        }
+
+        @media (max-height: 650px) {
+            .bpm-display { font-size: 4rem; }
+            .pendulum-container { height: 80px; }
+            .pendulum { height: 70px; }
+        }
+
+        @media (max-height: 550px) {
+            .pendulum-container { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="splash-screen" id="splashScreen">
+        <img src="FNT512.png" alt="FNT Logo" class="splash-logo">
+        <div class="splash-brand">Functional Neuro Training</div>
+        <div class="splash-title">Metronome</div>
+        <div class="splash-copyright">© 2024 Functional Neuro Training</div>
+    </div>
+
+    <div class="menu-overlay" id="menuOverlay"></div>
+
+    <div class="side-menu" id="sideMenu">
+        <div class="menu-header">
+            <h2>📖 使い方</h2>
+            <button class="close-btn" id="closeMenuBtn">✕</button>
+        </div>
+        
+        <div class="info-section">
+            <h3>🧠 神経科学的背景</h3>
+            <p>メトロノームトレーニングは、脳の時間処理能力を向上させます。小脳と基底核が協調してリズムを処理し、前頭前野が予測的タイミングを制御します。定期的な練習により、神経回路の同期性が向上し、運動協調性、注意力、ワーキングメモリが改善されます。</p>
+        </div>
+
+        <div class="info-section">
+            <h3>🎯 トレーニング方法</h3>
+            <p>1. 快適なBPM（60-80推奨）から開始<br>
+            2. ビートに合わせて手拍子や足踏み<br>
+            3. 徐々にBPMを上げて難易度を調整<br>
+            4. 1日5-10分から始めましょう</p>
+        </div>
+
+        <div class="info-section">
+            <h3>⚙️ 操作方法</h3>
+            <p>• スライダー：BPM調整<br>
+            • 拍子：−/+で1〜12拍に変更<br>
+            • 音色：5種類から選択可能<br>
+            • 🔔：1拍目アクセントのON/OFF<br>
+            • 🔊：サウンドのON/OFF</p>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="header">
+            <div class="logo-title">
+                <img src="FNT512-transparent.png" alt="FNT" class="header-logo">
+                <h1>Metronome</h1>
+            </div>
+            <button class="menu-btn" id="menuBtn">☰</button>
+        </div>
+
+        <div class="metronome-section">
+            <div class="bpm-display" id="bpmDisplay">120</div>
+            <div class="bpm-label">BPM</div>
+
+            <div class="beat-indicators" id="beatIndicators"></div>
+
+            <div class="pendulum-container">
+                <div class="pendulum" id="pendulum"></div>
+                <div class="pendulum-pivot"></div>
+            </div>
+
+            <div class="slider-container">
+                <input type="range" class="bpm-slider" id="bpmSlider" min="30" max="240" value="120">
+            </div>
+
+            <div class="bpm-presets">
+                <button class="preset-btn" data-bpm="60">60</button>
+                <button class="preset-btn" data-bpm="80">80</button>
+                <button class="preset-btn" data-bpm="100">100</button>
+                <button class="preset-btn active" data-bpm="120">120</button>
+                <button class="preset-btn" data-bpm="140">140</button>
+                <button class="preset-btn" data-bpm="180">180</button>
+            </div>
+
+            <div class="beat-setting">
+                <span class="beat-setting-label">拍子</span>
+                <button class="beat-btn" id="beatMinus" type="button">−</button>
+                <span class="beat-value" id="beatCount">4</span>
+                <button class="beat-btn" id="beatPlus" type="button">+</button>
+            </div>
+
+            <div class="sound-setting">
+                <span class="sound-label">音色</span>
+                <div class="sound-buttons" id="soundButtons">
+                    <button class="sound-btn active" data-sound="click" type="button">クリック</button>
+                    <button class="sound-btn" data-sound="wood" type="button">ウッド</button>
+                    <button class="sound-btn" data-sound="beep" type="button">ビープ</button>
+                    <button class="sound-btn" data-sound="soft" type="button">ソフト</button>
+                    <button class="sound-btn" data-sound="drum" type="button">ドラム</button>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="control-btn active" id="accentBtn" type="button">🔔</button>
+                <button class="play-btn" id="playBtn" type="button">▶</button>
+                <button class="control-btn active" id="soundBtn" type="button">🔊</button>
+            </div>
+        </div>
+
+        <div class="footer">© 2024 Functional Neuro Training</div>
+    </div>
+
+    <script>
+        // ===== 安定したメトロノーム実装 =====
+        // フリーズ対策版 - 安全装置付き
+
+        const state = {
+            isPlaying: false,
+            bpm: 120,
+            beatsPerMeasure: 4,
+            currentBeat: 0,
+            accentEnabled: true,
+            soundEnabled: true,
+            soundType: 'click',
+            pendulumDirection: 1,
+            audioInitialized: false
+        };
+
+        // オーディオ関連
+        let audioContext = null;
+        let nextNoteTime = 0;
+        let schedulerTimerId = null;
+        let animationFrameId = null;
+
+        // 事前生成したオーディオバッファ
+        const audioBuffers = {};
+
+        // 音色設定
+        const soundConfigs = {
+            click: { accent: { freq: 1000, type: 'sine', decay: 0.06 }, normal: { freq: 800, type: 'sine', decay: 0.05 } },
+            wood: { accent: { freq: 700, type: 'triangle', decay: 0.04 }, normal: { freq: 500, type: 'triangle', decay: 0.03 } },
+            beep: { accent: { freq: 1200, type: 'square', decay: 0.08 }, normal: { freq: 900, type: 'square', decay: 0.06 } },
+            soft: { accent: { freq: 600, type: 'sine', decay: 0.12 }, normal: { freq: 400, type: 'sine', decay: 0.1 } },
+            drum: { accent: { freq: 150, type: 'triangle', decay: 0.1 }, normal: { freq: 100, type: 'triangle', decay: 0.08 } }
+        };
+
+        // DOM要素
+        const $ = id => document.getElementById(id);
+        const el = {
+            splash: $('splashScreen'),
+            overlay: $('menuOverlay'),
+            menu: $('sideMenu'),
+            menuBtn: $('menuBtn'),
+            closeBtn: $('closeMenuBtn'),
+            bpmDisplay: $('bpmDisplay'),
+            bpmSlider: $('bpmSlider'),
+            beatIndicators: $('beatIndicators'),
+            pendulum: $('pendulum'),
+            beatCount: $('beatCount'),
+            beatMinus: $('beatMinus'),
+            beatPlus: $('beatPlus'),
+            soundButtons: $('soundButtons'),
+            playBtn: $('playBtn'),
+            accentBtn: $('accentBtn'),
+            soundBtn: $('soundBtn')
+        };
+
+        // スプラッシュ画面
+        setTimeout(() => {
+            if (el.splash) el.splash.classList.add('hidden');
+        }, 1800);
+
+        // メニュー
+        if (el.menuBtn) {
+            el.menuBtn.onclick = () => {
+                el.overlay.classList.add('show');
+                el.menu.classList.add('show');
+            };
+        }
+        if (el.closeBtn) {
+            el.closeBtn.onclick = () => {
+                el.overlay.classList.remove('show');
+                el.menu.classList.remove('show');
+            };
+        }
+        if (el.overlay) {
+            el.overlay.onclick = () => {
+                el.overlay.classList.remove('show');
+                el.menu.classList.remove('show');
+            };
+        }
+
+        // オーディオコンテキスト初期化
+        async function initAudio() {
+            if (state.audioInitialized && audioContext && audioContext.state === 'running') {
+                return true;
+            }
+
+            try {
+                if (!audioContext) {
+                    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                    if (!AudioContextClass) {
+                        console.warn('AudioContext not supported');
+                        return false;
+                    }
+                    audioContext = new AudioContextClass();
+                }
+
+                if (audioContext.state === 'suspended') {
+                    await audioContext.resume();
+                }
+
+                // ダミー音で初期化（iOS対策）
+                try {
+                    const osc = audioContext.createOscillator();
+                    const gain = audioContext.createGain();
+                    gain.gain.value = 0.001;
+                    osc.connect(gain);
+                    gain.connect(audioContext.destination);
+                    osc.start();
+                    osc.stop(audioContext.currentTime + 0.01);
+                } catch (e) {
+                    console.warn('Dummy sound failed:', e);
+                }
+
+                // オーディオバッファを事前生成
+                generateAudioBuffers();
+                state.audioInitialized = true;
+
+                return true;
+            } catch (e) {
+                console.error('Audio init error:', e);
+                return false;
+            }
+        }
+
+        // オーディオバッファ事前生成（負荷軽減）
+        function generateAudioBuffers() {
+            if (!audioContext) return;
+            
+            const sampleRate = audioContext.sampleRate;
+            const duration = 0.15;
+
+            for (const [soundName, config] of Object.entries(soundConfigs)) {
+                try {
+                    audioBuffers[soundName] = {
+                        accent: createBuffer(config.accent, sampleRate, duration),
+                        normal: createBuffer(config.normal, sampleRate, duration)
+                    };
+                } catch (e) {
+                    console.warn('Buffer creation failed for:', soundName, e);
+                }
+            }
+        }
+
+        function createBuffer(config, sampleRate, duration) {
+            const length = Math.floor(sampleRate * duration);
+            const buffer = audioContext.createBuffer(1, length, sampleRate);
+            const data = buffer.getChannelData(0);
+
+            const freq = config.freq;
+            const decay = config.decay;
+
+            for (let i = 0; i < length; i++) {
+                const t = i / sampleRate;
+                let sample = 0;
+
+                switch (config.type) {
+                    case 'sine':
+                        sample = Math.sin(2 * Math.PI * freq * t);
+                        break;
+                    case 'triangle':
+                        sample = 2 * Math.abs(2 * (t * freq - Math.floor(t * freq + 0.5))) - 1;
+                        break;
+                    case 'square':
+                        sample = Math.sin(2 * Math.PI * freq * t) > 0 ? 0.5 : -0.5;
+                        break;
+                }
+
+                const envelope = Math.exp(-t / decay);
+                data[i] = sample * envelope * 0.5;
+            }
+
+            return buffer;
+        }
+
+        // 音再生（バッファ使用）
+        function playSound(time, isAccent) {
+            if (!audioContext || !state.soundEnabled) return;
+
+            try {
+                const buffers = audioBuffers[state.soundType];
+                if (!buffers) return;
+
+                const buffer = (isAccent && state.accentEnabled) ? buffers.accent : buffers.normal;
+                if (!buffer) return;
+
+                const volume = (isAccent && state.accentEnabled) ? 0.8 : 0.5;
+
+                const source = audioContext.createBufferSource();
+                const gainNode = audioContext.createGain();
+
+                source.buffer = buffer;
+                gainNode.gain.value = volume;
+
+                source.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                source.start(time);
+            } catch (e) {
+                console.warn('Play error:', e);
+            }
+        }
+
+        // スケジューラー設定
+        const LOOKAHEAD = 0.15;
+        const INTERVAL = 25;
+        const MAX_SCHEDULE_PER_CALL = 4; // 安全装置：1回のスケジュールで処理する最大ビート数
+
+        // ビジュアル更新キュー
+        const visualQueue = [];
+
+        function scheduler() {
+            // 安全チェック
+            if (!state.isPlaying) return;
+            if (!audioContext) return;
+
+            try {
+                const currentTime = audioContext.currentTime;
+                
+                // currentTimeが取得できない場合は終了
+                if (typeof currentTime !== 'number' || isNaN(currentTime)) {
+                    console.warn('Invalid currentTime');
+                    return;
+                }
+
+                const secondsPerBeat = 60.0 / state.bpm;
+                let scheduledCount = 0;
+
+                // 安全装置付きwhileループ
+                while (nextNoteTime < currentTime + LOOKAHEAD && scheduledCount < MAX_SCHEDULE_PER_CALL) {
+                    const beatNumber = state.currentBeat;
+                    const noteTime = nextNoteTime;
+                    const isAccent = beatNumber === 0;
+
+                    // 音をスケジュール
+                    playSound(noteTime, isAccent);
+
+                    // ビジュアル更新用のキュー
+                    visualQueue.push({ time: noteTime, beatNumber });
+
+                    // 次のビートへ
+                    nextNoteTime += secondsPerBeat;
+                    state.currentBeat = (state.currentBeat + 1) % state.beatsPerMeasure;
+                    scheduledCount++;
+                }
+            } catch (e) {
+                console.error('Scheduler error:', e);
+                stop();
+            }
+        }
+
+        // requestAnimationFrameでビジュアル更新
+        function visualUpdater() {
+            if (!state.isPlaying) {
+                animationFrameId = null;
+                return;
+            }
+
+            try {
+                const currentTime = audioContext ? audioContext.currentTime : 0;
+
+                // 古いキューアイテムを処理（最大10個）
+                let processed = 0;
+                while (visualQueue.length > 0 && processed < 10) {
+                    if (visualQueue[0].time <= currentTime + 0.02) {
+                        const item = visualQueue.shift();
+                        updateVisuals(item.beatNumber);
+                        processed++;
+                    } else {
+                        break;
+                    }
+                }
+
+                // キューが溜まりすぎた場合はクリア
+                if (visualQueue.length > 20) {
+                    visualQueue.length = 0;
+                }
+            } catch (e) {
+                console.warn('Visual updater error:', e);
+            }
+
+            animationFrameId = requestAnimationFrame(visualUpdater);
+        }
+
+        // ビジュアル更新
+        function updateVisuals(beatNumber) {
+            try {
+                // BPMパルス
+                if (el.bpmDisplay) {
+                    el.bpmDisplay.classList.add('beat');
+                    setTimeout(() => {
+                        if (el.bpmDisplay) el.bpmDisplay.classList.remove('beat');
+                    }, 60);
+                }
+
+                // ビートインジケーター
+                if (el.beatIndicators) {
+                    const dots = el.beatIndicators.children;
+                    for (let i = 0; i < dots.length; i++) {
+                        dots[i].classList.remove('active', 'accent');
+                    }
+                    if (dots[beatNumber]) {
+                        dots[beatNumber].classList.add('active');
+                        if (beatNumber === 0 && state.accentEnabled) {
+                            dots[beatNumber].classList.add('accent');
+                        }
+                    }
+                }
+
+                // ペンデュラム
+                if (el.pendulum) {
+                    el.pendulum.style.transform = `translateX(-50%) rotate(${state.pendulumDirection * 25}deg)`;
+                    state.pendulumDirection *= -1;
+                }
+            } catch (e) {
+                console.warn('Update visuals error:', e);
+            }
+        }
+
+        // 再生開始
+        async function start() {
+            // 既に再生中なら何もしない
+            if (state.isPlaying) return;
+
+            const audioReady = await initAudio();
+            if (!audioReady) {
+                console.warn('Audio not ready, continuing without sound');
+            }
+
+            state.isPlaying = true;
+            state.currentBeat = 0;
+            state.pendulumDirection = 1;
+            visualQueue.length = 0;
+
+            // 開始時間を設定
+            if (audioContext) {
+                nextNoteTime = audioContext.currentTime + 0.05;
+            } else {
+                nextNoteTime = 0;
+            }
+
+            if (el.playBtn) {
+                el.playBtn.classList.add('playing');
+                el.playBtn.textContent = '⏸';
+            }
+
+            // setIntervalでスケジューリング
+            if (schedulerTimerId) {
+                clearInterval(schedulerTimerId);
+            }
+            schedulerTimerId = setInterval(scheduler, INTERVAL);
+
+            // ビジュアル更新ループ開始
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+            animationFrameId = requestAnimationFrame(visualUpdater);
+        }
+
+        // 停止
+        function stop() {
+            state.isPlaying = false;
+
+            if (schedulerTimerId) {
+                clearInterval(schedulerTimerId);
+                schedulerTimerId = null;
+            }
+
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+            }
+
+            visualQueue.length = 0;
+
+            if (el.playBtn) {
+                el.playBtn.classList.remove('playing');
+                el.playBtn.textContent = '▶';
+            }
+            
+            if (el.pendulum) {
+                el.pendulum.style.transform = 'translateX(-50%) rotate(0deg)';
+            }
+
+            if (el.beatIndicators) {
+                const dots = el.beatIndicators.children;
+                for (let i = 0; i < dots.length; i++) {
+                    dots[i].classList.remove('active', 'accent');
+                }
+            }
+        }
+
+        // 再生ボタン
+        if (el.playBtn) {
+            el.playBtn.onclick = () => state.isPlaying ? stop() : start();
+        }
+
+        // BPMスライダー
+        if (el.bpmSlider) {
+            el.bpmSlider.oninput = e => {
+                state.bpm = +e.target.value;
+                if (el.bpmDisplay) el.bpmDisplay.textContent = state.bpm;
+                updatePresets();
+            };
+        }
+
+        // プリセット
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.onclick = () => {
+                state.bpm = +btn.dataset.bpm;
+                if (el.bpmDisplay) el.bpmDisplay.textContent = state.bpm;
+                if (el.bpmSlider) el.bpmSlider.value = state.bpm;
+                updatePresets();
+            };
+        });
+
+        function updatePresets() {
+            document.querySelectorAll('.preset-btn').forEach(b => {
+                b.classList.toggle('active', +b.dataset.bpm === state.bpm);
             });
         }
-        return response;
-      })
-      .catch(() => {
-        // オフライン時はキャッシュから返す
-        return caches.match(event.request);
-      })
-  );
-});
+
+        // ビートインジケーター
+        function updateBeatIndicators() {
+            if (!el.beatIndicators) return;
+            
+            el.beatIndicators.innerHTML = '';
+            for (let i = 0; i < state.beatsPerMeasure; i++) {
+                const d = document.createElement('div');
+                d.className = 'beat-dot';
+                el.beatIndicators.appendChild(d);
+            }
+            if (el.beatCount) el.beatCount.textContent = state.beatsPerMeasure;
+            state.currentBeat = 0;
+        }
+
+        // 拍子変更
+        if (el.beatMinus) {
+            el.beatMinus.onclick = e => {
+                e.preventDefault();
+                if (state.beatsPerMeasure > 1) {
+                    state.beatsPerMeasure--;
+                    updateBeatIndicators();
+                }
+            };
+        }
+
+        if (el.beatPlus) {
+            el.beatPlus.onclick = e => {
+                e.preventDefault();
+                if (state.beatsPerMeasure < 12) {
+                    state.beatsPerMeasure++;
+                    updateBeatIndicators();
+                }
+            };
+        }
+
+        // 音色選択
+        if (el.soundButtons) {
+            el.soundButtons.onclick = e => {
+                if (e.target.classList.contains('sound-btn')) {
+                    state.soundType = e.target.dataset.sound;
+                    document.querySelectorAll('.sound-btn').forEach(b => {
+                        b.classList.toggle('active', b.dataset.sound === state.soundType);
+                    });
+                }
+            };
+        }
+
+        // アクセント
+        if (el.accentBtn) {
+            el.accentBtn.onclick = () => {
+                state.accentEnabled = !state.accentEnabled;
+                el.accentBtn.classList.toggle('active', state.accentEnabled);
+            };
+        }
+
+        // サウンド
+        if (el.soundBtn) {
+            el.soundBtn.onclick = () => {
+                state.soundEnabled = !state.soundEnabled;
+                el.soundBtn.classList.toggle('active', state.soundEnabled);
+                el.soundBtn.textContent = state.soundEnabled ? '🔊' : '🔇';
+            };
+        }
+
+        // 初期化イベント（一度だけ実行）
+        let userInteracted = false;
+        function handleUserInteraction() {
+            if (!userInteracted) {
+                userInteracted = true;
+                initAudio();
+            }
+        }
+        document.addEventListener('touchstart', handleUserInteraction, { once: true, passive: true });
+        document.addEventListener('click', handleUserInteraction, { once: true });
+
+        // バックグラウンド時は停止
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && state.isPlaying) {
+                stop();
+            }
+        });
+
+        // ページ離脱時のクリーンアップ
+        window.addEventListener('beforeunload', () => {
+            stop();
+            if (audioContext) {
+                try {
+                    audioContext.close();
+                } catch (e) {}
+            }
+        });
+
+        // Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js').catch(e => {
+                console.warn('SW registration failed:', e);
+            });
+        }
+
+        // 初期化
+        updateBeatIndicators();
+    </script>
+</body>
+</html>
