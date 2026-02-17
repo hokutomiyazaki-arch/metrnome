@@ -27,7 +27,6 @@
         html {
             width: 100%;
             height: 100%;
-            overflow: hidden;
         }
 
         body {
@@ -35,13 +34,13 @@
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             color: #ffffff;
             width: 100%;
-            height: 100%;
-            height: 100dvh;
+            min-height: 100%;
+            min-height: 100dvh;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
             padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-            touch-action: none;
         }
 
         .splash-screen {
@@ -103,10 +102,6 @@
             max-width: 500px;
             margin: 0 auto;
             padding: 15px;
-            overflow-y: auto;
-            overflow-x: hidden;
-            -webkit-overflow-scrolling: touch;
-            touch-action: pan-y !important;
         }
 
         .header {
@@ -114,7 +109,6 @@
             align-items: center;
             justify-content: space-between;
             margin-bottom: 15px;
-            flex-shrink: 0;
         }
 
         .logo-title {
@@ -180,15 +174,10 @@
             padding-top: calc(20px + env(safe-area-inset-top));
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
-            touch-action: pan-y !important;
         }
 
         .side-menu.show {
             right: 0;
-        }
-
-        .side-menu * {
-            touch-action: auto !important;
         }
 
         .menu-header {
@@ -240,7 +229,6 @@
             flex-direction: column;
             align-items: center;
             text-align: center;
-            flex: 1;
         }
 
         .bpm-display {
@@ -307,7 +295,6 @@
             transform-origin: bottom center;
             transform: translateX(-50%) rotate(0deg);
             border-radius: 2px;
-            transition: transform 0.1s ease-out;
         }
 
         .pendulum::after {
@@ -340,7 +327,6 @@
             max-width: 300px;
             margin-bottom: 15px;
             padding: 0 10px;
-            touch-action: pan-x !important;
         }
 
         .bpm-slider {
@@ -351,7 +337,6 @@
             background: rgba(255,255,255,0.1);
             border-radius: 4px;
             outline: none;
-            touch-action: pan-x !important;
         }
 
         .bpm-slider::-webkit-slider-thumb {
@@ -380,7 +365,6 @@
             color: #ccc;
             font-size: 0.9rem;
             cursor: pointer;
-            touch-action: manipulation;
         }
 
         .preset-btn.active {
@@ -419,7 +403,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            touch-action: manipulation;
         }
 
         .beat-btn:active {
@@ -465,7 +448,6 @@
             color: #aaa;
             font-size: 0.9rem;
             cursor: pointer;
-            touch-action: manipulation;
         }
 
         .sound-btn.active {
@@ -494,7 +476,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            touch-action: manipulation;
         }
 
         .play-btn.playing {
@@ -514,7 +495,6 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            touch-action: manipulation;
         }
 
         .control-btn.active {
@@ -526,7 +506,7 @@
             padding: 15px;
             color: #666;
             font-size: 0.75rem;
-            flex-shrink: 0;
+            margin-top: auto;
         }
 
         @media (max-height: 650px) {
@@ -642,7 +622,7 @@
 
     <script>
         // ===== 安定したメトロノーム実装 =====
-        // フリーズ対策版 - 安全装置付き
+        // Web Audio APIの高精度タイマーを使用
 
         const state = {
             isPlaying: false,
@@ -652,15 +632,14 @@
             accentEnabled: true,
             soundEnabled: true,
             soundType: 'click',
-            pendulumDirection: 1,
-            audioInitialized: false
+            pendulumDirection: 1
         };
 
         // オーディオ関連
         let audioContext = null;
         let nextNoteTime = 0;
-        let schedulerTimerId = null;
-        let animationFrameId = null;
+        let schedulerInterval = null;
+        let lastBeatTime = 0;
 
         // 事前生成したオーディオバッファ
         const audioBuffers = {};
@@ -696,44 +675,25 @@
         };
 
         // スプラッシュ画面
-        setTimeout(() => {
-            if (el.splash) el.splash.classList.add('hidden');
-        }, 1800);
+        setTimeout(() => el.splash.classList.add('hidden'), 1800);
 
         // メニュー
-        if (el.menuBtn) {
-            el.menuBtn.onclick = () => {
-                el.overlay.classList.add('show');
-                el.menu.classList.add('show');
-            };
-        }
-        if (el.closeBtn) {
-            el.closeBtn.onclick = () => {
-                el.overlay.classList.remove('show');
-                el.menu.classList.remove('show');
-            };
-        }
-        if (el.overlay) {
-            el.overlay.onclick = () => {
-                el.overlay.classList.remove('show');
-                el.menu.classList.remove('show');
-            };
-        }
+        el.menuBtn.onclick = () => {
+            el.overlay.classList.add('show');
+            el.menu.classList.add('show');
+        };
+        el.closeBtn.onclick = el.overlay.onclick = () => {
+            el.overlay.classList.remove('show');
+            el.menu.classList.remove('show');
+        };
 
         // オーディオコンテキスト初期化
         async function initAudio() {
-            if (state.audioInitialized && audioContext && audioContext.state === 'running') {
-                return true;
-            }
+            if (audioContext && audioContext.state === 'running') return true;
 
             try {
                 if (!audioContext) {
-                    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-                    if (!AudioContextClass) {
-                        console.warn('AudioContext not supported');
-                        return false;
-                    }
-                    audioContext = new AudioContextClass();
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 }
 
                 if (audioContext.state === 'suspended') {
@@ -741,21 +701,16 @@
                 }
 
                 // ダミー音で初期化（iOS対策）
-                try {
-                    const osc = audioContext.createOscillator();
-                    const gain = audioContext.createGain();
-                    gain.gain.value = 0.001;
-                    osc.connect(gain);
-                    gain.connect(audioContext.destination);
-                    osc.start();
-                    osc.stop(audioContext.currentTime + 0.01);
-                } catch (e) {
-                    console.warn('Dummy sound failed:', e);
-                }
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                gain.gain.value = 0.001;
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+                osc.start();
+                osc.stop(audioContext.currentTime + 0.01);
 
                 // オーディオバッファを事前生成
                 generateAudioBuffers();
-                state.audioInitialized = true;
 
                 return true;
             } catch (e) {
@@ -766,20 +721,14 @@
 
         // オーディオバッファ事前生成（負荷軽減）
         function generateAudioBuffers() {
-            if (!audioContext) return;
-            
             const sampleRate = audioContext.sampleRate;
-            const duration = 0.15;
+            const duration = 0.15; // 150ms
 
             for (const [soundName, config] of Object.entries(soundConfigs)) {
-                try {
-                    audioBuffers[soundName] = {
-                        accent: createBuffer(config.accent, sampleRate, duration),
-                        normal: createBuffer(config.normal, sampleRate, duration)
-                    };
-                } catch (e) {
-                    console.warn('Buffer creation failed for:', soundName, e);
-                }
+                audioBuffers[soundName] = {
+                    accent: createBuffer(config.accent, sampleRate, duration),
+                    normal: createBuffer(config.normal, sampleRate, duration)
+                };
             }
         }
 
@@ -795,6 +744,7 @@
                 const t = i / sampleRate;
                 let sample = 0;
 
+                // 波形生成
                 switch (config.type) {
                     case 'sine':
                         sample = Math.sin(2 * Math.PI * freq * t);
@@ -807,6 +757,7 @@
                         break;
                 }
 
+                // エンベロープ（減衰）
                 const envelope = Math.exp(-t / decay);
                 data[i] = sample * envelope * 0.5;
             }
@@ -823,8 +774,6 @@
                 if (!buffers) return;
 
                 const buffer = (isAccent && state.accentEnabled) ? buffers.accent : buffers.normal;
-                if (!buffer) return;
-
                 const volume = (isAccent && state.accentEnabled) ? 0.8 : 0.5;
 
                 const source = audioContext.createBufferSource();
@@ -838,134 +787,88 @@
 
                 source.start(time);
             } catch (e) {
-                console.warn('Play error:', e);
+                console.error('Play error:', e);
             }
         }
 
-        // スケジューラー設定
-        const LOOKAHEAD = 0.15;
-        const INTERVAL = 25;
-        const MAX_SCHEDULE_PER_CALL = 4; // 安全装置：1回のスケジュールで処理する最大ビート数
+        // 高精度スケジューラー
+        // lookahead: 先読み時間（長いほど安定、短いほどレスポンシブ）
+        // interval: スケジューラー実行間隔
+        const LOOKAHEAD = 0.15;  // 150ms先まで予約
+        const INTERVAL = 10;     // 10msごとにチェック
+
+        function scheduler() {
+            if (!state.isPlaying || !audioContext) return;
+
+            const secondsPerBeat = 60.0 / state.bpm;
+
+            // 先読み時間内のすべてのビートをスケジュール
+            while (nextNoteTime < audioContext.currentTime + LOOKAHEAD) {
+                const beatNumber = state.currentBeat;
+                const noteTime = nextNoteTime;
+                const isAccent = beatNumber === 0;
+
+                // 音をスケジュール
+                playSound(noteTime, isAccent);
+
+                // ビジュアル更新用のキュー
+                scheduleVisualUpdate(noteTime, beatNumber);
+
+                // 次のビートへ
+                nextNoteTime += secondsPerBeat;
+                state.currentBeat = (state.currentBeat + 1) % state.beatsPerMeasure;
+            }
+        }
 
         // ビジュアル更新キュー
         const visualQueue = [];
 
-        function scheduler() {
-            // 安全チェック
-            if (!state.isPlaying) return;
-            if (!audioContext) return;
-
-            try {
-                const currentTime = audioContext.currentTime;
-                
-                // currentTimeが取得できない場合は終了
-                if (typeof currentTime !== 'number' || isNaN(currentTime)) {
-                    console.warn('Invalid currentTime');
-                    return;
-                }
-
-                const secondsPerBeat = 60.0 / state.bpm;
-                let scheduledCount = 0;
-
-                // 安全装置付きwhileループ
-                while (nextNoteTime < currentTime + LOOKAHEAD && scheduledCount < MAX_SCHEDULE_PER_CALL) {
-                    const beatNumber = state.currentBeat;
-                    const noteTime = nextNoteTime;
-                    const isAccent = beatNumber === 0;
-
-                    // 音をスケジュール
-                    playSound(noteTime, isAccent);
-
-                    // ビジュアル更新用のキュー
-                    visualQueue.push({ time: noteTime, beatNumber });
-
-                    // 次のビートへ
-                    nextNoteTime += secondsPerBeat;
-                    state.currentBeat = (state.currentBeat + 1) % state.beatsPerMeasure;
-                    scheduledCount++;
-                }
-            } catch (e) {
-                console.error('Scheduler error:', e);
-                stop();
-            }
+        function scheduleVisualUpdate(time, beatNumber) {
+            visualQueue.push({ time, beatNumber });
         }
 
         // requestAnimationFrameでビジュアル更新
         function visualUpdater() {
-            if (!state.isPlaying) {
-                animationFrameId = null;
-                return;
+            if (!state.isPlaying) return;
+
+            const currentTime = audioContext ? audioContext.currentTime : 0;
+
+            while (visualQueue.length > 0 && visualQueue[0].time <= currentTime + 0.02) {
+                const item = visualQueue.shift();
+                updateVisuals(item.beatNumber);
             }
 
-            try {
-                const currentTime = audioContext ? audioContext.currentTime : 0;
-
-                // 古いキューアイテムを処理（最大10個）
-                let processed = 0;
-                while (visualQueue.length > 0 && processed < 10) {
-                    if (visualQueue[0].time <= currentTime + 0.02) {
-                        const item = visualQueue.shift();
-                        updateVisuals(item.beatNumber);
-                        processed++;
-                    } else {
-                        break;
-                    }
-                }
-
-                // キューが溜まりすぎた場合はクリア
-                if (visualQueue.length > 20) {
-                    visualQueue.length = 0;
-                }
-            } catch (e) {
-                console.warn('Visual updater error:', e);
-            }
-
-            animationFrameId = requestAnimationFrame(visualUpdater);
+            requestAnimationFrame(visualUpdater);
         }
 
         // ビジュアル更新
         function updateVisuals(beatNumber) {
-            try {
-                // BPMパルス
-                if (el.bpmDisplay) {
-                    el.bpmDisplay.classList.add('beat');
-                    setTimeout(() => {
-                        if (el.bpmDisplay) el.bpmDisplay.classList.remove('beat');
-                    }, 60);
-                }
+            // BPMパルス
+            el.bpmDisplay.classList.add('beat');
+            setTimeout(() => el.bpmDisplay.classList.remove('beat'), 60);
 
-                // ビートインジケーター
-                if (el.beatIndicators) {
-                    const dots = el.beatIndicators.children;
-                    for (let i = 0; i < dots.length; i++) {
-                        dots[i].classList.remove('active', 'accent');
-                    }
-                    if (dots[beatNumber]) {
-                        dots[beatNumber].classList.add('active');
-                        if (beatNumber === 0 && state.accentEnabled) {
-                            dots[beatNumber].classList.add('accent');
-                        }
-                    }
-                }
-
-                // ペンデュラム
-                if (el.pendulum) {
-                    el.pendulum.style.transform = `translateX(-50%) rotate(${state.pendulumDirection * 25}deg)`;
-                    state.pendulumDirection *= -1;
-                }
-            } catch (e) {
-                console.warn('Update visuals error:', e);
+            // ビートインジケーター
+            const dots = el.beatIndicators.children;
+            for (let i = 0; i < dots.length; i++) {
+                dots[i].classList.remove('active', 'accent');
             }
+            if (dots[beatNumber]) {
+                dots[beatNumber].classList.add('active');
+                if (beatNumber === 0 && state.accentEnabled) {
+                    dots[beatNumber].classList.add('accent');
+                }
+            }
+
+            // ペンデュラム
+            el.pendulum.style.transform = `translateX(-50%) rotate(${state.pendulumDirection * 25}deg)`;
+            state.pendulumDirection *= -1;
         }
 
         // 再生開始
         async function start() {
-            // 既に再生中なら何もしない
-            if (state.isPlaying) return;
-
-            const audioReady = await initAudio();
-            if (!audioReady) {
-                console.warn('Audio not ready, continuing without sound');
+            if (!await initAudio()) {
+                alert('音声の初期化に失敗しました。画面をタップして再試行してください。');
+                return;
             }
 
             state.isPlaying = true;
@@ -973,84 +876,56 @@
             state.pendulumDirection = 1;
             visualQueue.length = 0;
 
-            // 開始時間を設定
-            if (audioContext) {
-                nextNoteTime = audioContext.currentTime + 0.05;
-            } else {
-                nextNoteTime = 0;
-            }
+            // 少し先からスタート（安定性向上）
+            nextNoteTime = audioContext.currentTime + 0.05;
 
-            if (el.playBtn) {
-                el.playBtn.classList.add('playing');
-                el.playBtn.textContent = '⏸';
-            }
+            el.playBtn.classList.add('playing');
+            el.playBtn.textContent = '⏸';
 
-            // setIntervalでスケジューリング
-            if (schedulerTimerId) {
-                clearInterval(schedulerTimerId);
-            }
-            schedulerTimerId = setInterval(scheduler, INTERVAL);
-
+            // setIntervalで安定したスケジューリング
+            schedulerInterval = setInterval(scheduler, INTERVAL);
+            
             // ビジュアル更新ループ開始
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
-            }
-            animationFrameId = requestAnimationFrame(visualUpdater);
+            requestAnimationFrame(visualUpdater);
         }
 
         // 停止
         function stop() {
             state.isPlaying = false;
 
-            if (schedulerTimerId) {
-                clearInterval(schedulerTimerId);
-                schedulerTimerId = null;
-            }
-
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
-                animationFrameId = null;
+            if (schedulerInterval) {
+                clearInterval(schedulerInterval);
+                schedulerInterval = null;
             }
 
             visualQueue.length = 0;
 
-            if (el.playBtn) {
-                el.playBtn.classList.remove('playing');
-                el.playBtn.textContent = '▶';
-            }
-            
-            if (el.pendulum) {
-                el.pendulum.style.transform = 'translateX(-50%) rotate(0deg)';
-            }
+            el.playBtn.classList.remove('playing');
+            el.playBtn.textContent = '▶';
+            el.pendulum.style.transform = 'translateX(-50%) rotate(0deg)';
 
-            if (el.beatIndicators) {
-                const dots = el.beatIndicators.children;
-                for (let i = 0; i < dots.length; i++) {
-                    dots[i].classList.remove('active', 'accent');
-                }
+            const dots = el.beatIndicators.children;
+            for (let i = 0; i < dots.length; i++) {
+                dots[i].classList.remove('active', 'accent');
             }
         }
 
         // 再生ボタン
-        if (el.playBtn) {
-            el.playBtn.onclick = () => state.isPlaying ? stop() : start();
-        }
+        el.playBtn.onclick = () => state.isPlaying ? stop() : start();
 
         // BPMスライダー
-        if (el.bpmSlider) {
-            el.bpmSlider.oninput = e => {
-                state.bpm = +e.target.value;
-                if (el.bpmDisplay) el.bpmDisplay.textContent = state.bpm;
-                updatePresets();
-            };
-        }
+        el.bpmSlider.oninput = e => {
+            state.bpm = +e.target.value;
+            el.bpmDisplay.textContent = state.bpm;
+            updatePresets();
+        };
 
         // プリセット
         document.querySelectorAll('.preset-btn').forEach(btn => {
             btn.onclick = () => {
                 state.bpm = +btn.dataset.bpm;
-                if (el.bpmDisplay) el.bpmDisplay.textContent = state.bpm;
-                if (el.bpmSlider) el.bpmSlider.value = state.bpm;
+                el.bpmDisplay.textContent = state.bpm;
+                el.bpmSlider.value = state.bpm;
                 updatePresets();
             };
         });
@@ -1063,101 +938,68 @@
 
         // ビートインジケーター
         function updateBeatIndicators() {
-            if (!el.beatIndicators) return;
-            
             el.beatIndicators.innerHTML = '';
             for (let i = 0; i < state.beatsPerMeasure; i++) {
                 const d = document.createElement('div');
                 d.className = 'beat-dot';
                 el.beatIndicators.appendChild(d);
             }
-            if (el.beatCount) el.beatCount.textContent = state.beatsPerMeasure;
+            el.beatCount.textContent = state.beatsPerMeasure;
             state.currentBeat = 0;
         }
 
         // 拍子変更
-        if (el.beatMinus) {
-            el.beatMinus.onclick = e => {
-                e.preventDefault();
-                if (state.beatsPerMeasure > 1) {
-                    state.beatsPerMeasure--;
-                    updateBeatIndicators();
-                }
-            };
-        }
+        el.beatMinus.onclick = e => {
+            e.preventDefault();
+            if (state.beatsPerMeasure > 1) {
+                state.beatsPerMeasure--;
+                updateBeatIndicators();
+            }
+        };
 
-        if (el.beatPlus) {
-            el.beatPlus.onclick = e => {
-                e.preventDefault();
-                if (state.beatsPerMeasure < 12) {
-                    state.beatsPerMeasure++;
-                    updateBeatIndicators();
-                }
-            };
-        }
+        el.beatPlus.onclick = e => {
+            e.preventDefault();
+            if (state.beatsPerMeasure < 12) {
+                state.beatsPerMeasure++;
+                updateBeatIndicators();
+            }
+        };
 
         // 音色選択
-        if (el.soundButtons) {
-            el.soundButtons.onclick = e => {
-                if (e.target.classList.contains('sound-btn')) {
-                    state.soundType = e.target.dataset.sound;
-                    document.querySelectorAll('.sound-btn').forEach(b => {
-                        b.classList.toggle('active', b.dataset.sound === state.soundType);
-                    });
-                }
-            };
-        }
+        el.soundButtons.onclick = e => {
+            if (e.target.classList.contains('sound-btn')) {
+                state.soundType = e.target.dataset.sound;
+                document.querySelectorAll('.sound-btn').forEach(b => {
+                    b.classList.toggle('active', b.dataset.sound === state.soundType);
+                });
+            }
+        };
 
         // アクセント
-        if (el.accentBtn) {
-            el.accentBtn.onclick = () => {
-                state.accentEnabled = !state.accentEnabled;
-                el.accentBtn.classList.toggle('active', state.accentEnabled);
-            };
-        }
+        el.accentBtn.onclick = () => {
+            state.accentEnabled = !state.accentEnabled;
+            el.accentBtn.classList.toggle('active', state.accentEnabled);
+        };
 
         // サウンド
-        if (el.soundBtn) {
-            el.soundBtn.onclick = () => {
-                state.soundEnabled = !state.soundEnabled;
-                el.soundBtn.classList.toggle('active', state.soundEnabled);
-                el.soundBtn.textContent = state.soundEnabled ? '🔊' : '🔇';
-            };
-        }
+        el.soundBtn.onclick = () => {
+            state.soundEnabled = !state.soundEnabled;
+            el.soundBtn.classList.toggle('active', state.soundEnabled);
+            el.soundBtn.textContent = state.soundEnabled ? '🔊' : '🔇';
+        };
 
-        // 初期化イベント（一度だけ実行）
-        let userInteracted = false;
-        function handleUserInteraction() {
-            if (!userInteracted) {
-                userInteracted = true;
-                initAudio();
-            }
-        }
-        document.addEventListener('touchstart', handleUserInteraction, { once: true, passive: true });
-        document.addEventListener('click', handleUserInteraction, { once: true });
+        // 初期化イベント
+        document.addEventListener('touchstart', initAudio, { once: true });
+        document.addEventListener('click', initAudio, { once: true });
 
         // バックグラウンド時は停止
         document.addEventListener('visibilitychange', () => {
-            if (document.hidden && state.isPlaying) {
-                stop();
-            }
-        });
-
-        // ページ離脱時のクリーンアップ
-        window.addEventListener('beforeunload', () => {
-            stop();
-            if (audioContext) {
-                try {
-                    audioContext.close();
-                } catch (e) {}
-            }
+            if (document.hidden && state.isPlaying) stop();
         });
 
         // Service Worker
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('./sw.js').catch(e => {
-                console.warn('SW registration failed:', e);
-            });
+            navigator.serviceWorker.register('./sw.js');
         }
 
         // 初期化
